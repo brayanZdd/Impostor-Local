@@ -464,7 +464,7 @@
 var CATEGORIES = {
   "Animales": {
     emoji: "🐾",
-    words: ["León","Tigre","Elefante","Jirafa","Pingüino","Delfín","Cocodrilo","Gorila","Cebra","Pulpo","Tiburón","Koala","Panda","Flamenco","Mantarraya","Búho","Camello","Hipopótamo","Orangután","Águila","Quetzal","Anaconda","Murciélago","Canguro","Tortuga","Oso Polar","Lobo","Foca","Mapache","Pavo Real","Rinoceronte","Guepardo","Serpiente","Piraña","Manatí"],
+    words: ["León","Tigre","Elefante","Jirafa","Pingüino","Delfín","Cocodrilo","Gorila","Cebra","Pulpo","Tiburón","Koala","Panda","Flamenco","Mantarraya","Búho","Camello","Hipopótamo","Orangután","Águila","Quetzal","Anaconda","Murciélago","Canguro","Tortuga","Oso Polar","Lobo","Foca","Mapache","Pavo Real","Rinoceronte","Guepardo","Serpiente","Piraña","Manatí","Oveja","Cabra","Hurón","Topo","Rata","Conejo","Caballo","Vaca","Cerdo","Gallina"],
     hints: {
       "León":"Melena",
       "Tigre":"Rayas",
@@ -500,12 +500,22 @@ var CATEGORIES = {
       "Guepardo":"Rápido",
       "Serpiente":"Ondula",
       "Piraña":"Dientes",
-      "Manatí":"Pacífico"
+      "Manatí":"Pacífico",
+      "Oveja":"Lana",
+      "Cabra":"Cuerno",
+      "Hurón":"Largo",
+      "Topo":"Ciego",
+      "Rata":"Alcantarilla",
+      "Conejo":"Orejas",
+      "Caballo":"Herradura",
+      "Vaca":"Leche",
+      "Cerdo":"Barro",
+      "Gallina":"Huevo"
     }
   },
   "Comidas": {
     emoji: "🍔",
-    words: ["Pizza","Hamburguesa","Sushi","Tacos","Hot Dog","Pasta","Ramen","Burrito","Nuggets","Arepa","Pupusa","Ceviche","Empanada","Waffle","Pancakes","Lasaña","Enchilada","Pad Thai","Pho","Shawarma","Croissant","Nachos","Paella","Gyros","Dim Sum","Falafel","Kebab","Tiramisu","Churros","Crepe","Bagel","Poke Bowl","Döner","Chow Mein","Bánh Mì"],
+    words: ["Pizza","Hamburguesa","Sushi","Tacos","Hot Dog","Pasta","Ramen","Burrito","Nuggets","Arepa","Pupusa","Ceviche","Empanada","Waffle","Pancakes","Lasaña","Enchilada","Pad Thai","Pho","Shawarma","Croissant","Nachos","Paella","Gyros","Dim Sum","Falafel","Kebab","Tiramisu","Churros","Crepe","Bagel","Poke Bowl","Döner","Chow Mein","Bánh Mì","Manzana","Plátano","Naranja","Fresa","Uva","Sandía","Zanahoria","Brócoli","Lechuga","Tomate","Cebolla","Ajo","Pimiento","Aguacate","Pera"],
     hints: {
       "Pizza":"Horno",
       "Hamburguesa":"Carne",
@@ -537,7 +547,21 @@ var CATEGORIES = {
       "Churros":"Azúcar",
       "Crepe":"Delgada",
       "Chow Mein":"Salteado",
-
+      "Manzana":"Roja",
+      "Plátano":"Amarillo",
+      "Naranja":"VitaminaC",
+      "Fresa":"Corazón",
+      "Uva":"Racimo",
+      "Sandía":"Verano",
+      "Zanahoria":"Conejo",
+      "Brócoli":"Árbol",
+      "Lechuga":"Ensalada",
+      "Tomate":"Salsa",
+      "Cebolla":"Llorar",
+      "Ajo":"Diente",
+      "Pimiento":"Campana",
+      "Aguacate":"Guacamole",
+      "Pera":"Botella"
     }
   },
   "Futbolistas": {
@@ -669,7 +693,7 @@ var CATEGORIES = {
       "Joker":"Caos",
       "Batman":"Murciélago",
       "Superman":"Capa",
-      "Spiderman":"Telaraña",
+      "Spiderman":"Picadura",
       "Wolverine":"Garras",
       "Jack Sparrow":"Brújula",
       "John Wick":"Perro",
@@ -791,43 +815,78 @@ var CATEGORIES = {
       "Juan el Bautista":"Jordán",
       "Pedro":"Negar",
       "Tomás":"Dudar",
-      "Judas Iscariote":"Monedas",
+      "Judas Iscariote":"Monedas"
     }
   },
-
   "Cómics": {
-  emoji: "📚",
-  words: ["Spider-Man","Batman","Superman","Wonder Woman","Wolverine","Iron Man","Capitán América","Thor","Hulk","Flash","Linterna Verde","Deadpool","Daredevil","Punisher","Black Widow","Doctor Strange","Aquaman","Shazam","Catwoman","Joker","Harley Quinn","Venom","Magneto","Profesor X","Tormenta","Mística","Nightcrawler","Gambito","Cíclope","Robin","Linterna Amarilla","Antorcha Humana","Mister Fantástico","Thing","Mujer Invisible"],
-  hints: {
-    "Spider-Man":"Telarañas",
-    "Batman":"Murciélago",
-    "Superman":"Krypton",
-    "Wonder Woman":"Lazo",
-    "Wolverine":"Garras",
-    "Iron Man":"Armadura",
-    "Capitán América":"Escudo",
-    "Thor":"Martillo",
-    "Hulk":"Ira",
-    "Flash":"Velocidad",
-    "Linterna Verde":"Voluntad",
-    "Deadpool":"Mercenario",
-    "Daredevil":"HellsKitchen",
-    "Punisher":"Venganza",
-    "Black Widow":"Viuda",
-    "Doctor Strange":"OjoAgamotto",
-    "Aquaman":"Atlántida",
-    "Shazam":"¡Shazam!",
-    "Catwoman":"Garra",
-    "Joker":"Risa",
-    "Harley Quinn":"Pingüino",
-    "Venom":"Simbionte",
-    "Tormenta":"Clima",
-    "Linterna Amarilla":"Parásito",
-    "Antorcha Humana":"Hiroshima",
-    "Mujer Invisible":"Invisibilidad"
-
+    emoji: "📚",
+    words: ["Spider-Man","Batman","Superman","Wonder Woman","Wolverine","Iron Man","Capitán América","Thor","Hulk","Flash","Linterna Verde","Deadpool","Daredevil","Punisher","Black Widow","Doctor Strange","Aquaman","Shazam","Catwoman","Joker","Harley Quinn","Venom","Magneto","Profesor X","Tormenta","Mística","Nightcrawler","Gambito","Cíclope","Robin","Linterna Amarilla","Antorcha Humana","Mister Fantástico","Thing","Mujer Invisible"],
+    hints: {
+      "Spider-Man":"Picadura",
+      "Batman":"Huérfano",
+      "Superman":"Kryptonita",
+      "Wonder Woman":"Lazo",
+      "Wolverine":"Adamantium",
+      "Iron Man":"Reactor",
+      "Capitán América":"Congelado",
+      "Thor":"Mjolnir",
+      "Hulk":"Ira",
+      "Flash":"Velocidad",
+      "Linterna Verde":"Anillo",
+      "Deadpool":"Mercenario",
+      "Daredevil":"Ciego",
+      "Punisher":"Venganza",
+      "Black Widow":"Viuda",
+      "Doctor Strange":"OjoAgamotto",
+      "Aquaman":"Atlántida",
+      "Shazam":"¡Shazam!",
+      "Catwoman":"Garra",
+      "Joker":"Risa",
+      "Harley Quinn":"Pingüino",
+      "Venom":"Simbionte",
+      "Tormenta":"Clima",
+      "Antorcha Humana":"Hiroshima",
+      "Mujer Invisible":"Invisibilidad"
+    }
+  },
+  "Objetos y Sucesos": {
+    emoji: "⚡",
+    words: ["Muerte","Accidente","Pistola","Vehículo","Policía","Terremoto","Ambulancia","Borracho","Bombero","Incendio","Cuchillo","Robo","Grito","Sirena","Cadáver","Homicidio","Secuestro","Explosión","Rescate","Motosierra","Apuñalamiento","Atropello","Desmayo","Pelea","Derrumbe","Inundación","Rayo","Caída","Herida","Alarma","Cárcel","Juez"],
+    hints: {
+      "Muerte":"Final",
+      "Accidente":"Choque",
+      "Pistola":"Balazo",
+      "Vehículo":"Conducir",
+      "Policía":"Placa",
+      "Terremoto":"Temblor",
+      "Ambulancia":"Emergencia",
+      "Borracho":"Cerveza",
+      "Bombero":"Manguera",
+      "Incendio":"Humo",
+      "Cuchillo":"Cocina",
+      "Robo":"Ladrón",
+      "Grito":"Susto",
+      "Sirena":"Ruido",
+      "Cadáver":"Muerto",
+      "Homicidio":"Asesinato",
+      "Secuestro":"Cautivo",
+      "Explosión":"Bomba",
+      "Rescate":"Salvar",
+      "Motosierra":"Terror",
+      "Apuñalamiento":"Navaja",
+      "Atropello":"Coche",
+      "Desmayo":"Sangre",
+      "Pelea":"Golpes",
+      "Derrumbe":"Escombros",
+      "Inundación":"Agua",
+      "Rayo":"Tormenta",
+      "Caída":"Altura",
+      "Herida":"Sangrar",
+      "Alarma":"Ruido",
+      "Cárcel":"Rejas",
+      "Juez":"Tribunal"
+    }
   }
-}
 };
 
 
@@ -1079,6 +1138,7 @@ function flipCard() {
     document.getElementById("card-role-label").textContent = "¡ERES CIVIL!";
     document.getElementById("card-word").textContent       = player.word;
     document.getElementById("card-hint-label").style.display = "none";
+    document.getElementById("card-hint-text").textContent    = "";
     document.getElementById("reveal-sub").textContent = "Recuerda la palabra. No la digas 🤐";
   }
   document.getElementById("the-card").classList.add("flipped");
@@ -1202,12 +1262,12 @@ function showVote() {
     if (state.eliminatedPlayers.indexOf(i)>=0) continue;
     var card = document.createElement("div"); card.className = "vote-card";
     card.innerHTML = "<div class=\"vc-num\">"+(i+1)+"</div><div>"+state.players[i].name+"</div>";
-    (function(idx){ card.onclick = function(){
+    (function(idx, c){ c.onclick = function(){
       var cards = document.querySelectorAll(".vote-card");
       for (var j=0;j<cards.length;j++) cards[j].classList.remove("selected");
-      card.classList.add("selected"); state.selectedVote = idx;
+      c.classList.add("selected"); state.selectedVote = idx;
       document.getElementById("confirm-vote-btn").disabled = false;
-    }; })(i);
+    }; })(i, card);
     list.appendChild(card);
   }
   document.getElementById("confirm-vote-btn").disabled = true;
