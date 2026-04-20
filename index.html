@@ -1,0 +1,1308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IMPOSTOR — El Juego</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     PALETA NEON (inspirada en synthwave: 3B0855, B52467,
+     F0B8E2 suave, DE2270 magenta, 49B999 teal, 50C987 verde)
+     ========================================================= */
+  :root {
+    --bg:        #0d0015;
+    --surface:   #160020;
+    --surface2:  #1e0030;
+    --border:    #3b0855;
+    --accent:    #de2270;
+    --accent2:   #b52467;
+    --accent3:   #49b999;
+    --neon-pink: #ff2d78;
+    --neon-cyan: #00ffe7;
+    --neon-purp: #c044ff;
+    --warn:      #f0b8e2;
+    --text:      #f5e6ff;
+    --muted:     #8a5a9a;
+    --impostor:  #ff2d78;
+    --civilian:  #49b999;
+    --card-shadow: 0 25px 60px rgba(0,0,0,0.7);
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { height:100%; background:var(--bg); color:var(--text); font-family:'Syne',sans-serif; overflow-x:hidden; }
+
+  /* scanline subtle overlay */
+  body::after { content:''; position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px); }
+
+  #particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+  .particle { position:absolute; border-radius:50%; animation:float linear infinite; }
+  @keyframes float { 0%{transform:translateY(100vh) scale(0);opacity:0} 20%{opacity:0.6} 100%{transform:translateY(-100px) scale(1);opacity:0} }
+
+  .screen { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:20px; z-index:10; transition:opacity 0.5s, transform 0.5s; }
+  .screen.hidden { opacity:0; pointer-events:none; transform:scale(0.96); }
+
+  /* ---- SPLASH ---- */
+  #splash { background: radial-gradient(ellipse at 50% 30%, #3b0855 0%, #1a0030 40%, #0d0015 80%); }
+/* Contenedor principal del splash */
+.splash-logo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+  padding: 20px;
+}
+
+/* La imagen del impostor */
+.splash-logo .eye {
+  width: auto;
+  height: 260px;          /* Altura controlada, ni muy chica ni enorme */
+  max-width: 80%;
+  display: block;
+  margin: 0 auto 20px auto;
+  animation: pulse 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px var(#8a5a9a ));
+  object-fit: contain;
+}
+  @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12);filter:drop-shadow(0 0 35px var(--neon-pink))} }
+  .splash-logo h1 { font-size:clamp(48px,10vw,96px); font-weight:800; letter-spacing:-2px; line-height:0.9;
+    background:linear-gradient(135deg, #f0b8e2 0%, #de2270 35%, #e044ff 65%, #49b999 100%);
+    -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+    filter:drop-shadow(0 0 30px rgba(222,34,112,0.6)); }
+  .splash-logo p { color:var(--muted); font-family:'Space Mono',monospace; font-size:14px; letter-spacing:4px; margin-top:16px;
+    text-shadow:0 0 10px var(--neon-purp); }
+  .btn-play { padding:20px 64px; font-size:22px; font-weight:800; font-family:'Syne',sans-serif;
+    background:linear-gradient(135deg, #de2270, #c044ff); color:#fff; border:none; border-radius:100px; cursor:pointer;
+    transition:all 0.3s; letter-spacing:1px;
+    box-shadow:0 0 30px rgba(222,34,112,0.6), 0 0 60px rgba(192,68,255,0.3), inset 0 1px 0 rgba(255,255,255,0.15); }
+  .btn-play:hover { transform:scale(1.06) translateY(-3px); box-shadow:0 0 50px rgba(222,34,112,0.8), 0 0 100px rgba(192,68,255,0.5); }
+
+  /* ---- SETUP ---- */
+  #setup { background:var(--bg); overflow-y:auto; justify-content:flex-start; padding-top:30px; }
+  .setup-inner { width:100%; max-width:640px; padding:0 0 60px; }
+  .setup-title { text-align:center; margin-bottom:36px; }
+  .setup-title h2 { font-size:32px; font-weight:800; background:linear-gradient(135deg,#f0b8e2,#de2270); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .setup-title p { color:var(--muted); font-size:14px; margin-top:4px; }
+  .section-label { font-size:12px; font-weight:700; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:12px; }
+  .section-block { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:24px; margin-bottom:20px;
+    box-shadow:0 0 20px rgba(59,8,85,0.4); }
+
+  .num-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:8px; }
+  .num-btn { padding:14px 8px; background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; color:var(--muted); font-family:'Syne',sans-serif; font-size:18px; font-weight:700; cursor:pointer; transition:all 0.2s; }
+  .num-btn:hover { border-color:var(--neon-pink); color:var(--text); box-shadow:0 0 12px rgba(255,45,120,0.3); }
+  .num-btn.active { background:linear-gradient(135deg,var(--accent),var(--neon-purp)); border-color:var(--neon-pink); color:#fff; box-shadow:0 0 20px rgba(222,34,112,0.5); }
+
+  #names-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .name-wrap { display:flex; flex-direction:column; gap:4px; }
+  .name-wrap label { font-size:11px; color:var(--muted); font-family:'Space Mono',monospace; letter-spacing:1px; }
+  .name-input { background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; padding:12px 16px; color:var(--text); font-family:'Syne',sans-serif; font-size:15px; outline:none; transition:all 0.2s; }
+  .name-input:focus { border-color:var(--neon-pink); box-shadow:0 0 15px rgba(255,45,120,0.25); }
+  .name-input::placeholder { color:var(--muted); }
+
+  .toggle-row { display:flex; align-items:center; justify-content:space-between; padding:8px 0; }
+  .toggle-label { font-size:15px; }
+  .toggle-sub { font-size:12px; color:var(--muted); margin-top:2px; }
+  .toggle { position:relative; width:52px; height:28px; flex-shrink:0; }
+  .toggle input { opacity:0; width:0; height:0; }
+  .toggle-slider { position:absolute; inset:0; background:var(--border); border-radius:100px; cursor:pointer; transition:0.3s; }
+  .toggle-slider:before { content:''; position:absolute; height:20px; width:20px; left:4px; top:4px; background:#fff; border-radius:50%; transition:0.3s; }
+  .toggle input:checked + .toggle-slider { background:linear-gradient(135deg,var(--accent),var(--neon-purp)); box-shadow:0 0 15px rgba(222,34,112,0.5); }
+  .toggle input:checked + .toggle-slider:before { transform:translateX(24px); }
+
+  .slider-val { font-size:20px; font-weight:800; color:var(--neon-pink); font-family:'Space Mono',monospace; text-shadow:0 0 10px var(--neon-pink); }
+  input[type=range] { -webkit-appearance:none; appearance:none; width:100%; height:6px; background:var(--border); border-radius:100px; outline:none; margin-top:10px; }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance:none; width:22px; height:22px; border-radius:50%; background:var(--neon-pink); cursor:pointer; box-shadow:0 0 12px rgba(255,45,120,0.7); }
+  input[type=range]::-moz-range-thumb { width:22px; height:22px; border-radius:50%; background:var(--neon-pink); cursor:pointer; border:none; }
+  .slider-labels { display:flex; justify-content:space-between; font-size:12px; color:var(--muted); font-family:'Space Mono',monospace; margin-top:6px; }
+
+  .word-mode-row { display:flex; gap:10px; flex-wrap:wrap; }
+  .word-mode-btn { flex:1; min-width:120px; padding:14px; background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; color:var(--muted); font-family:'Syne',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all 0.2s; text-align:center; }
+  .word-mode-btn:hover { border-color:var(--neon-pink); color:var(--text); }
+  .word-mode-btn.active { background:linear-gradient(135deg,var(--accent),var(--neon-purp)); border-color:var(--neon-pink); color:#fff; box-shadow:0 0 15px rgba(222,34,112,0.4); }
+
+  .cat-grid { display:flex; flex-wrap:wrap; gap:8px; }
+  .cat-chip { padding:8px 14px; border-radius:100px; border:1.5px solid var(--border); background:var(--surface2); color:var(--muted); font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s; font-family:'Syne',sans-serif; }
+  .cat-chip:hover { border-color:var(--neon-purp); color:var(--text); }
+  .cat-chip.active { background:linear-gradient(135deg,var(--accent2),var(--neon-purp)); border-color:var(--neon-purp); color:#fff; box-shadow:0 0 12px rgba(192,68,255,0.4); }
+  .cat-select-all { padding:6px 14px; border-radius:100px; border:1.5px solid var(--neon-cyan); background:transparent; color:var(--neon-cyan); font-size:12px; font-weight:700; cursor:pointer; font-family:'Syne',sans-serif; transition:all 0.2s; margin-bottom:10px; display:inline-block; text-shadow:0 0 8px var(--neon-cyan); }
+  .cat-select-all:hover { background:rgba(0,255,231,0.1); box-shadow:0 0 15px rgba(0,255,231,0.3); }
+
+  .custom-word-input { width:100%; background:var(--surface2); border:1.5px solid var(--border); border-radius:12px; padding:14px 18px; color:var(--text); font-family:'Syne',sans-serif; font-size:16px; font-weight:700; outline:none; transition:all 0.2s; text-align:center; letter-spacing:2px; }
+  .custom-word-input:focus { border-color:var(--neon-pink); box-shadow:0 0 20px rgba(255,45,120,0.3); }
+  .custom-word-input::placeholder { color:var(--muted); font-size:14px; letter-spacing:1px; font-weight:400; }
+
+  .btn-start { width:100%; padding:20px; font-size:18px; font-weight:800; font-family:'Syne',sans-serif;
+    background:linear-gradient(135deg,#de2270,#c044ff); color:#fff; border:none; border-radius:16px; cursor:pointer; transition:all 0.3s;
+    letter-spacing:1px; box-shadow:0 0 30px rgba(222,34,112,0.5), 0 0 60px rgba(192,68,255,0.2); margin-top:8px; }
+  .btn-start:hover { transform:translateY(-2px); box-shadow:0 0 50px rgba(222,34,112,0.7), 0 0 80px rgba(192,68,255,0.4); }
+  .error-msg { color:var(--neon-pink); font-size:13px; text-align:center; margin-top:8px; font-family:'Space Mono',monospace; min-height:20px; text-shadow:0 0 8px var(--neon-pink); }
+
+  /* ---- REVEAL ---- */
+  #reveal { background:radial-gradient(ellipse at 50% 20%, #2a0040 0%, #160020 50%, #0d0015 80%); }
+  .player-progress { width:100%; max-width:480px; margin-bottom:24px; }
+  .prog-text { display:flex; justify-content:space-between; font-size:13px; color:var(--muted); margin-bottom:8px; font-family:'Space Mono',monospace; }
+  .prog-bar { height:4px; background:var(--border); border-radius:100px; overflow:hidden; }
+  .prog-fill { height:100%; background:linear-gradient(90deg,var(--neon-pink),var(--neon-purp)); border-radius:100px; transition:width 0.4s;
+    box-shadow:0 0 10px var(--neon-pink); }
+  .player-name-tag { font-size:28px; font-weight:800; text-align:center; margin-bottom:6px;
+    text-shadow:0 0 20px rgba(222,34,112,0.5); }
+  .player-sub { color:var(--muted); font-size:14px; text-align:center; margin-bottom:32px; font-family:'Space Mono',monospace; }
+
+  /* Card 3D */
+  .card-wrap { perspective:1000px; cursor:pointer; margin-bottom:32px; }
+  .card { width:280px; height:380px; position:relative; transform-style:preserve-3d; transition:transform 0.8s cubic-bezier(0.175,0.885,0.32,1.275); }
+  .card.flipped { transform:rotateY(180deg); }
+  .card-face { position:absolute; inset:0; border-radius:24px; backface-visibility:hidden; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:32px; }
+  .card-back { background:linear-gradient(135deg, #2a0040, #3b0855, #1e0060, #4a007a);
+    border:1px solid rgba(192,68,255,0.5); box-shadow:var(--card-shadow), 0 0 40px rgba(192,68,255,0.3); }
+  .card-back-icon { font-size:60px; margin-bottom:20px; animation:wobble 3s ease-in-out infinite; filter:drop-shadow(0 0 15px var(--neon-purp)); }
+  @keyframes wobble { 0%,100%{transform:rotate(-5deg)} 50%{transform:rotate(5deg)} }
+  .card-back-text { font-size:16px; color:rgba(255,255,255,0.7); text-align:center; text-shadow:0 0 10px var(--neon-purp); }
+  /* front default */
+  .card-front { background:linear-gradient(135deg, #0d0015, #1e0030, #160020); border:1px solid rgba(255,255,255,0.1); box-shadow:var(--card-shadow); transform:rotateY(180deg); }
+  /* impostor front — hot magenta */
+  .card-front.impostor-card {
+    background:linear-gradient(135deg, #2a0015, #6b0030, #de2270, #b52467);
+    border-color:rgba(255,45,120,0.7);
+    box-shadow:var(--card-shadow), 0 0 40px rgba(255,45,120,0.5); }
+  /* civilian front — teal neon */
+  .card-front.civilian-card {
+    background:linear-gradient(135deg, #001a2a, #003040, #49b999, #50c987);
+    border-color:rgba(73,185,153,0.7);
+    box-shadow:var(--card-shadow), 0 0 40px rgba(73,185,153,0.5); }
+  .role-icon { font-size:56px; margin-bottom:16px; filter:drop-shadow(0 0 15px currentColor); }
+  .role-label { font-size:13px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-bottom:8px; text-align:center; }
+  .role-word { font-size:clamp(22px,6vw,34px); font-weight:800; text-align:center; line-height:1.1; text-shadow:0 0 20px rgba(255,255,255,0.4); }
+  .hint-label { font-size:12px; color:rgba(255,255,255,0.5); margin-top:14px; text-transform:uppercase; letter-spacing:2px; }
+  .hint-text { font-size:13px; color:rgba(255,255,255,0.8); text-align:center; margin-top:6px; font-style:italic; line-height:1.4; }
+  /* glow rings */
+  .glow-ring { position:absolute; inset:-3px; border-radius:27px; opacity:0; transition:opacity 0.3s; pointer-events:none; border-radius:27px; }
+  .card-wrap:hover .glow-ring { opacity:1; }
+  .impostor-glow { box-shadow:0 0 50px rgba(255,45,120,0.9), 0 0 100px rgba(255,45,120,0.4); border:1px solid rgba(255,45,120,0.4); }
+  .civilian-glow { box-shadow:0 0 50px rgba(73,185,153,0.9), 0 0 100px rgba(73,185,153,0.4); border:1px solid rgba(73,185,153,0.4); }
+
+  .btn-pass { padding:16px 48px; font-size:17px; font-weight:800; font-family:'Syne',sans-serif;
+    background:var(--surface2); border:1.5px solid var(--border); border-radius:100px; color:var(--muted); cursor:pointer; transition:all 0.3s; }
+  .btn-pass.ready { background:linear-gradient(135deg,var(--accent),var(--neon-purp)); border-color:transparent; color:#fff;
+    box-shadow:0 0 30px rgba(222,34,112,0.6), 0 0 60px rgba(192,68,255,0.3); }
+  .btn-pass.ready:hover { transform:scale(1.04); box-shadow:0 0 50px rgba(222,34,112,0.8), 0 0 80px rgba(192,68,255,0.5); }
+  .pass-hint { font-size:12px; color:var(--muted); margin-top:10px; font-family:'Space Mono',monospace; text-align:center; }
+
+  /* ---- GAME ---- */
+  #game { background:var(--bg); }
+  .game-inner { width:100%; max-width:560px; }
+  .timer-wrap { text-align:center; margin-bottom:32px; }
+  .timer-circle { width:140px; height:140px; margin:0 auto; position:relative; }
+  .timer-circle svg { transform:rotate(-90deg); }
+  .timer-bg { fill:none; stroke:var(--border); stroke-width:6; }
+  .timer-arc { fill:none; stroke:var(--neon-pink); stroke-width:6; stroke-linecap:round; transition:stroke-dashoffset 1s linear, stroke 0.3s;
+    filter:drop-shadow(0 0 6px var(--neon-pink)); }
+  .timer-arc.warn { stroke:var(--warn); filter:drop-shadow(0 0 6px var(--warn)); }
+  .timer-arc.danger { stroke:var(--neon-pink); filter:drop-shadow(0 0 12px var(--neon-pink)); animation:flicker 0.5s infinite; }
+  @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.6} }
+  .timer-time { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:32px; font-weight:800; font-family:'Space Mono',monospace; text-shadow:0 0 10px var(--neon-pink); }
+  .timer-label { font-size:12px; color:var(--muted); margin-top:8px; letter-spacing:3px; }
+  .timer-paused { color:var(--warn) !important; text-shadow:0 0 10px var(--warn) !important; }
+  #pause-btn { margin-top:10px; padding:8px 20px; background:var(--surface2); border:1px solid var(--border); border-radius:100px; color:var(--muted); cursor:pointer; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; transition:all 0.2s; }
+  #pause-btn:hover { border-color:var(--neon-pink); color:var(--text); box-shadow:0 0 10px rgba(255,45,120,0.3); }
+
+  .round-info { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:20px 24px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;
+    box-shadow:0 0 20px rgba(59,8,85,0.4); }
+  .ri-item { text-align:center; }
+  .ri-val { font-size:22px; font-weight:800; color:var(--neon-pink); font-family:'Space Mono',monospace; text-shadow:0 0 10px var(--neon-pink); }
+  .ri-lab { font-size:11px; color:var(--muted); letter-spacing:2px; text-transform:uppercase; margin-top:2px; }
+
+  .game-btns { display:flex; gap:12px; }
+  .btn-vote { flex:1; padding:18px; font-size:16px; font-weight:800; font-family:'Syne',sans-serif;
+    background:linear-gradient(135deg,var(--impostor),#8b0030); color:#fff; border:none; border-radius:14px; cursor:pointer; transition:all 0.3s;
+    box-shadow:0 0 20px rgba(255,45,120,0.4); }
+  .btn-vote:hover { transform:translateY(-2px); box-shadow:0 0 35px rgba(255,45,120,0.7); }
+  .btn-round { flex:1; padding:18px; font-size:16px; font-weight:800; font-family:'Syne',sans-serif;
+    background:var(--surface2); border:1.5px solid var(--border); color:var(--muted); border-radius:14px; cursor:pointer; transition:all 0.3s; }
+  .btn-round:hover { border-color:var(--neon-cyan); color:var(--neon-cyan); box-shadow:0 0 15px rgba(0,255,231,0.3); }
+
+  /* ---- VOTE ---- */
+  #vote { background:radial-gradient(ellipse at 50% 50%, #2a000a 0%, #0d0015 60%); overflow-y:auto; justify-content:flex-start; padding-top:40px; }
+  .vote-inner { width:100%; max-width:420px; display:flex; flex-direction:column; align-items:center; padding-bottom:60px; }
+  .vote-title { font-size:32px; font-weight:800; text-align:center; margin-bottom:8px; text-shadow:0 0 20px var(--neon-pink); }
+  .vote-sub { color:var(--muted); text-align:center; margin-bottom:32px; font-family:'Space Mono',monospace; font-size:13px; }
+  .vote-grid { display:flex; flex-direction:column; gap:10px; width:100%; }
+  .vote-card { display:flex; align-items:center; gap:16px; padding:16px 20px; background:var(--surface); border:1.5px solid var(--border); border-radius:14px; cursor:pointer; transition:all 0.2s; font-size:16px; font-weight:700; }
+  .vote-card:hover { border-color:var(--neon-pink); background:rgba(255,45,120,0.08); transform:translateX(4px); box-shadow:0 0 15px rgba(255,45,120,0.2); }
+  .vote-card.selected { border-color:var(--neon-pink); background:rgba(255,45,120,0.15); box-shadow:0 0 25px rgba(255,45,120,0.4); }
+  .vc-num { width:36px; height:36px; border-radius:50%; background:var(--surface2); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; font-family:'Space Mono',monospace; font-size:14px; color:var(--muted); flex-shrink:0; }
+  .btn-confirm-vote { width:100%; padding:18px; font-size:17px; font-weight:800; font-family:'Syne',sans-serif;
+    background:linear-gradient(135deg,var(--impostor),#8b0030); color:#fff; border:none; border-radius:14px; cursor:pointer; transition:all 0.3s; margin-top:16px;
+    box-shadow:0 0 25px rgba(255,45,120,0.4); }
+  .btn-confirm-vote:hover { transform:translateY(-2px); box-shadow:0 0 40px rgba(255,45,120,0.7); }
+  .btn-confirm-vote:disabled { opacity:0.35; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn-back-game { margin-top:12px; padding:12px 32px; background:transparent; border:1px solid var(--border); border-radius:100px; color:var(--muted); cursor:pointer; font-family:'Syne',sans-serif; font-size:13px; transition:all 0.2s; }
+  .btn-back-game:hover { border-color:var(--muted); color:var(--text); }
+
+  /* ---- RESULT ---- */
+  #result { background:radial-gradient(ellipse at 50% 30%, #001a0f 0%, #0d0015 60%); overflow-y:auto; justify-content:flex-start; padding-top:40px; }
+  #result.impostor-win { background:radial-gradient(ellipse at 50% 30%, #2a000a 0%, #0d0015 60%); }
+  .result-inner { width:100%; max-width:480px; display:flex; flex-direction:column; align-items:center; padding-bottom:60px; }
+  .result-badge { width:100px; height:100px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:50px; margin:0 auto 24px; }
+  .result-badge.good { background:rgba(73,185,153,0.1); border:2px solid var(--civilian); box-shadow:0 0 40px rgba(73,185,153,0.5), 0 0 80px rgba(73,185,153,0.2); }
+  .result-badge.bad { background:rgba(255,45,120,0.1); border:2px solid var(--impostor); box-shadow:0 0 40px rgba(255,45,120,0.5), 0 0 80px rgba(255,45,120,0.2); }
+  .result-title { font-size:clamp(24px,6vw,40px); font-weight:800; text-align:center; margin-bottom:8px; }
+  .result-sub { color:var(--muted); font-size:14px; text-align:center; margin-bottom:32px; font-family:'Space Mono',monospace; }
+  .revealed-list { width:100%; background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:20px; margin-bottom:28px; box-shadow:0 0 20px rgba(59,8,85,0.3); }
+  .rl-title { font-size:12px; font-weight:700; letter-spacing:3px; color:var(--muted); text-transform:uppercase; margin-bottom:8px; }
+  .rl-word-info { font-size:13px; color:var(--muted); margin-bottom:14px; font-family:'Space Mono',monospace; }
+  .rl-word-info strong { color:var(--text); }
+  .rl-row { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
+  .rl-row:last-child { border-bottom:none; }
+  .rl-role { padding:4px 10px; border-radius:100px; font-size:11px; font-weight:700; letter-spacing:1px; white-space:nowrap; }
+  .rl-role.imp { background:rgba(255,45,120,0.2); color:var(--neon-pink); text-shadow:0 0 8px var(--neon-pink); }
+  .rl-role.civ { background:rgba(73,185,153,0.2); color:var(--civilian); text-shadow:0 0 8px var(--civilian); }
+  .rl-name { flex:1; font-weight:700; }
+  .rl-word { font-size:13px; color:var(--muted); font-family:'Space Mono',monospace; }
+  .result-btns { display:flex; gap:12px; width:100%; flex-wrap:wrap; }
+  .btn-replay { flex:1; padding:16px; font-size:15px; font-weight:800; font-family:'Syne',sans-serif;
+    background:linear-gradient(135deg,var(--accent),var(--neon-purp)); color:#fff; border:none; border-radius:14px; cursor:pointer; transition:all 0.3s; box-shadow:0 0 20px rgba(222,34,112,0.4); }
+  .btn-replay:hover { transform:translateY(-2px); box-shadow:0 0 35px rgba(222,34,112,0.7); }
+  .btn-menu { flex:1; padding:16px; font-size:15px; font-weight:800; font-family:'Syne',sans-serif;
+    background:var(--surface2); border:1.5px solid var(--border); color:var(--muted); border-radius:14px; cursor:pointer; transition:all 0.3s; }
+  .btn-menu:hover { border-color:var(--muted); color:var(--text); }
+
+  #confetti-canvas { position:fixed; inset:0; pointer-events:none; z-index:100; }
+  .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(100px);
+    background:var(--surface2); border:1px solid var(--neon-pink); padding:14px 28px; border-radius:100px; font-size:14px; font-weight:700;
+    z-index:200; transition:transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275); white-space:nowrap; max-width:90vw;
+    box-shadow:0 0 20px rgba(255,45,120,0.3); text-shadow:0 0 8px rgba(255,45,120,0.4); }
+  .toast.show { transform:translateX(-50%) translateY(0); }
+
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:100px; }
+  ::-webkit-scrollbar-thumb:hover { background:var(--accent); }
+
+  @media(max-width:500px) {
+    #names-grid { grid-template-columns:1fr; }
+    .num-grid { grid-template-columns:repeat(4,1fr); }
+    .game-btns { flex-direction:column; }
+    .result-btns { flex-direction:column; }
+  }
+</style>
+</head>
+<body>
+
+<div id="particles"></div>
+<canvas id="confetti-canvas"></canvas>
+<div class="toast" id="toast"></div>
+
+<!-- SPLASH -->
+<div id="splash" class="screen active">
+    <div class="splash-logo">
+      <img src="11.png" alt="Impostor" class="eye">
+      <h1>IMPOSTOR</h1>
+      <p>JUEGO LOCAL, MISMA MESA</p>
+      <br>
+      <button class="btn-play" onclick="showScreen('setup')">▶ JUGAR</button>
+    </div>
+  </div>
+
+<!-- SETUP -->
+<div class="screen hidden" id="setup">
+  <div class="setup-inner">
+    <div class="setup-title"><h2>⚙️ Configurar Partida</h2><p>Personaliza tu experiencia</p></div>
+
+    <div class="section-block">
+      <div class="section-label">Número de Jugadores</div>
+      <div class="num-grid" id="player-count-grid"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">Nombres de Jugadores</div>
+      <div id="names-grid"></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">Número de Impostores</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:12px">
+        <span class="slider-val" id="imp-val">1</span>
+        <span style="color:var(--muted);font-size:13px;font-family:'Space Mono',monospace" id="imp-max-label">máx. recomendado: 1</span>
+      </div>
+      <input type="range" id="imp-slider" min="1" max="3" value="1">
+      <div class="slider-labels"><span>1</span><span>2</span><span>3</span></div>
+    </div>
+
+    <div class="section-block">
+      <div class="toggle-row">
+        <div><div class="toggle-label">🔍 Pistas para Impostores</div><div class="toggle-sub">El impostor recibe una pista sin revelar la palabra</div></div>
+        <label class="toggle"><input type="checkbox" id="hints-toggle"><span class="toggle-slider"></span></label>
+      </div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">Duración de Ronda</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:8px">
+        <span class="slider-val" id="timer-val">3</span>
+        <span style="color:var(--muted);font-size:13px">minutos</span>
+      </div>
+      <input type="range" id="timer-slider" min="1" max="5" value="3">
+      <div class="slider-labels"><span>1 min</span><span>2</span><span>3</span><span>4</span><span>5 min</span></div>
+    </div>
+
+    <div class="section-block">
+      <div class="section-label">Modo de Palabra</div>
+      <div class="word-mode-row">
+        <button class="word-mode-btn active" data-mode="categories" onclick="setWordMode('categories')">🎲 Por Categorías</button>
+        <button class="word-mode-btn" data-mode="random" onclick="setWordMode('random')">⚡ Totalmente Aleatorio</button>
+        <button class="word-mode-btn" data-mode="custom" onclick="setWordMode('custom')">✏️ Personalizada</button>
+      </div>
+      <div id="panel-categories" style="margin-top:16px">
+        <button class="cat-select-all" onclick="toggleAllCats()">✓ Seleccionar todas</button>
+        <div class="cat-grid" id="cat-grid"></div>
+      </div>
+      <div id="panel-random" style="display:none;margin-top:16px">
+        <div style="background:var(--surface2);border-radius:12px;padding:16px;text-align:center;border:1px solid var(--border);">
+          <div style="font-size:32px;margin-bottom:8px;filter:drop-shadow(0 0 10px var(--neon-purp))">⚡</div>
+          <div style="font-weight:700;margin-bottom:6px">Modo Totalmente Aleatorio</div>
+          <div style="color:var(--muted);font-size:13px;line-height:1.5">Se escoge una palabra al azar de <strong style="color:var(--neon-cyan);text-shadow:0 0 8px var(--neon-cyan)">todas las categorías</strong>. Nadie sabe de cuál viene.</div>
+        </div>
+      </div>
+      <div id="panel-custom" style="display:none;margin-top:16px">
+        <div style="color:var(--muted);font-size:13px;margin-bottom:10px">Escribe la palabra que verán los civiles. El impostor solo verá ???</div>
+        <input class="custom-word-input" type="text" id="custom-word-input" placeholder="Escribe la palabra secreta..." maxlength="30">
+      </div>
+    </div>
+
+    <button class="btn-start" onclick="startGame()"> ¡INICIAR JUEGO!</button>
+    <div class="error-msg" id="setup-error"></div>
+    <div style="height:20px"></div>
+  </div>
+</div>
+
+<!-- REVEAL -->
+<div class="screen hidden" id="reveal">
+  <div class="player-progress">
+    <div class="prog-text"><span id="prog-label">Jugador 1 de 3</span><span id="prog-pct">33%</span></div>
+    <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:33%"></div></div>
+  </div>
+  <div class="player-name-tag" id="reveal-name">Jugador 1</div>
+  <div class="player-sub" id="reveal-sub">Toca la carta para ver tu rol</div>
+  <div class="card-wrap" onclick="flipCard()">
+    <div class="card" id="the-card">
+      <div class="card-face card-back">
+        <div class="card-back-icon">🎭</div>
+        <div class="card-back-text">Toca para revelar</div>
+      </div>
+      <div class="card-face card-front" id="card-front">
+        <div id="card-glow" class="glow-ring"></div>
+        <div class="role-icon" id="card-icon">🕵️</div>
+        <div class="role-label" id="card-role-label">ROL</div>
+        <div class="role-word" id="card-word">???</div>
+        <div class="hint-label" id="card-hint-label" style="display:none">PISTA</div>
+        <div class="hint-text" id="card-hint-text"></div>
+      </div>
+    </div>
+  </div>
+  <button class="btn-pass" id="btn-pass" onclick="nextPlayer()" disabled>Revelar primero</button>
+  <div class="pass-hint" id="pass-hint"></div>
+</div>
+
+<!-- GAME -->
+<div class="screen hidden" id="game">
+  <div class="game-inner">
+    <div class="timer-wrap">
+      <div class="timer-circle">
+        <svg width="140" height="140" viewBox="0 0 140 140">
+          <circle class="timer-bg" cx="70" cy="70" r="62"/>
+          <circle class="timer-arc" id="timer-arc" cx="70" cy="70" r="62" stroke-dasharray="389.6" stroke-dashoffset="0"/>
+        </svg>
+        <div class="timer-time" id="timer-display">3:00</div>
+      </div>
+      <div class="timer-label">TIEMPO DE RONDA</div>
+      <button id="pause-btn" onclick="toggleTimer()">⏸ PAUSAR</button>
+    </div>
+    <div class="round-info">
+      <div class="ri-item"><div class="ri-val" id="ri-round">1</div><div class="ri-lab">Ronda</div></div>
+      <div class="ri-item"><div class="ri-val" id="ri-players">3</div><div class="ri-lab">Jugadores</div></div>
+      <div class="ri-item"><div class="ri-val" id="ri-impostors">1</div><div class="ri-lab">Impostores</div></div>
+      <div class="ri-item"><div class="ri-val" id="ri-cat">—</div><div class="ri-lab">Modo</div></div>
+    </div>
+    <div class="game-btns">
+      <button class="btn-vote" onclick="showVote()">🗳️ VOTAR IMPOSTOR</button>
+      <button class="btn-round" onclick="newRound()">🔄 NUEVA RONDA</button>
+    </div>
+    <div style="margin-top:12px;text-align:center;color:var(--muted);font-size:12px;font-family:'Space Mono',monospace">Termina cuando eliminen al impostor o los impostores igualen a civiles</div>
+  </div>
+</div>
+
+<!-- VOTE -->
+<div class="screen hidden" id="vote">
+  <div class="vote-inner">
+    <div class="vote-title">🗳️ Votar Impostor</div>
+    <div class="vote-sub">Decidan juntos quién es el impostor</div>
+    <div class="vote-grid" id="vote-list"></div>
+    <button class="btn-confirm-vote" id="confirm-vote-btn" onclick="confirmVote()" disabled>Confirmar Eliminación</button>
+    <button class="btn-back-game" onclick="resumeGame()">← Volver al juego</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen hidden" id="result">
+  <div class="result-inner">
+    <div class="result-badge" id="result-badge">🎉</div>
+    <div class="result-title" id="result-title">Los civiles ganaron</div>
+    <div class="result-sub" id="result-sub">El impostor fue descubierto</div>
+    <div class="revealed-list" id="revealed-list"></div>
+    <div class="result-btns">
+      <button class="btn-replay" onclick="replaySetup()">🔄 Otra Partida</button>
+      <button class="btn-menu" onclick="goHome()">🏠 Inicio</button>
+    </div>
+  </div>
+</div>
+
+<script>
+var CATEGORIES = {
+  "Animales": {
+    emoji: "🐾",
+    words: ["León","Tigre","Elefante","Jirafa","Pingüino","Delfín","Cocodrilo","Gorila","Cebra","Pulpo","Tiburón","Koala","Panda","Flamenco","Mantarraya","Búho","Camello","Hipopótamo","Orangután","Águila","Quetzal","Anaconda","Murciélago","Canguro","Tortuga","Oso Polar","Lobo","Foca","Mapache","Pavo Real","Rinoceronte","Guepardo","Serpiente","Piraña","Manatí"],
+    hints: {
+      "León":"Melena",
+      "Tigre":"Rayas",
+      "Elefante":"Trompa",
+      "Jirafa":"Cuello",
+      "Pingüino":"Nadar",
+      "Delfín":"Inteligente",
+      "Cocodrilo":"Dientes",
+      "Gorila":"Primado",
+      "Cebra":"Listas",
+      "Pulpo":"Tentáculos",
+      "Tiburón":"Aleta",
+      "Koala":"Eucalipto",
+      "Panda":"Bambú",
+      "Flamenco":"Rosa",
+      "Mantarraya":"Vuela",
+      "Búho":"Nocturno",
+      "Camello":"Joroba",
+      "Hipopótamo":"Río",
+      "Orangután":"Pelirrojo",
+      "Águila":"Rapaz",
+      "Quetzal":"Verde",
+      "Anaconda":"Grande",
+      "Murciélago":"Volar",
+      "Canguro":"Bolsa",
+      "Tortuga":"Caparazón",
+      "Oso Polar":"Blanco",
+      "Lobo":"Aullido",
+      "Foca":"Hielo",
+      "Mapache":"Máscara",
+      "Pavo Real":"Abanico",
+      "Rinoceronte":"Cuerno",
+      "Guepardo":"Rápido",
+      "Serpiente":"Ondula",
+      "Piraña":"Dientes",
+      "Manatí":"Pacífico"
+    }
+  },
+  "Comidas": {
+    emoji: "🍔",
+    words: ["Pizza","Hamburguesa","Sushi","Tacos","Hot Dog","Pasta","Ramen","Burrito","Nuggets","Arepa","Pupusa","Ceviche","Empanada","Waffle","Pancakes","Lasaña","Enchilada","Pad Thai","Pho","Shawarma","Croissant","Nachos","Paella","Gyros","Dim Sum","Falafel","Kebab","Tiramisu","Churros","Crepe","Bagel","Poke Bowl","Döner","Chow Mein","Bánh Mì"],
+    hints: {
+      "Pizza":"Horno",
+      "Hamburguesa":"Carne",
+      "Sushi":"Arroz",
+      "Tacos":"Tortilla",
+      "Hot Dog":"Salchicha",
+      "Pasta":"Fideos",
+      "Ramen":"Sopa",
+      "Burrito":"Enrollado",
+      "Nuggets":"Pollo",
+      "Arepa":"Maíz",
+      "Pupusa":"Rellena",
+      "Ceviche":"Limón",
+      "Empanada":"Frita",
+      "Waffle":"Cuadros",
+      "Pancakes":"Desayuno",
+      "Lasaña":"Capas",
+      "Enchilada":"Salsa",
+      "Mac Donalds":"nuggets",
+      "Ensalada":"verduras",
+      "Shawarma":"Pita",
+      "Croissant":"París",
+      "Nachos":"Queso",
+      "Paella":"Azafrán",
+      "Costillas":"BBQ",
+      "Dim Sum":"Vapor",
+      "Pasta":"Salsa",
+      "Tiramisu":"Café",
+      "Churros":"Azúcar",
+      "Crepe":"Delgada",
+      "Chow Mein":"Salteado",
+
+    }
+  },
+  "Futbolistas": {
+    emoji: "⚽",
+    words: ["Messi","Cristiano Ronaldo","Pelé","Maradona","Ronaldinho","Zidane","Neymar","Mbappé","Haaland","Beckham","Rivaldo","Ronaldo Nazário","Iniesta","Xavi","Buffon","Roberto Carlos","Cafu","Thierry Henry","Zlatan Ibrahimovic","Riquelme","Romario","Cantona","Platini","Figo","Del Piero","Pirlo","Lampard","Gerrard","Modric","De Bruyne","Vinicius Jr","Benzema","Van Dijk","Lewandowski","Suárez"],
+    hints: {
+      "Messi":"Barcelona",
+      "Cristiano Ronaldo":"CR7",
+      "Pelé":"Rey",
+      "Maradona":"Mano",
+      "Ronaldinho":"Sonrisa",
+      "Zidane":"Cabezazo",
+      "Neymar":"Estilo",
+      "Mbappé":"Rápido",
+      "Haaland":"Goles",
+      "Beckham":"Curva",
+      "Rivaldo":"Zurdo",
+      "Ronaldo Nazário":"Fenómeno",
+      "Iniesta":"Mundial",
+      "Xavi":"Pases",
+      "Buffon":"Portero",
+      "Roberto Carlos":"Tiro",
+      "Cafu":"Lateral",
+      "Thierry Henry":"Elegante",
+      "Zlatan Ibrahimovic":"Acrobacia",
+      "Riquelme":"Diez",
+      "Romario":"Implacable",
+      "Cantona":"Cuello",
+      "Platini":"Ochentas",
+      "Del Piero":"Juve",
+      "Pirlo":"Barba",
+      "Lampard":"Llegada",
+      "Gerrard":"Capitán",
+      "Modric":"Croata",
+      "De Bruyne":"Actual",
+      "Vinicius Jr":"Veloz",
+      "Benzema":"Balón",
+      "Van Dijk":"Defensa",
+      "Lewandowski":"Polaco",
+      "Suárez":"Mordida"
+    }
+  },
+  "Deportes y Juegos": {
+    emoji: "🏆",
+    words: ["Fútbol","Básquetbol","Tenis","Béisbol","Volleyball","Natación","Boxeo","Ciclismo","Fórmula 1","Golf","Rugby","Ajedrez","Pádel","Skateboard","Surf","MMA","Atletismo","Esgrima","Billar","Ping Pong","Halterofilia","Triatlón","Cricket","Hockey","Snowboard","Escalada","Lucha Libre","Arquería","Karting","E-Sports","Parkour","Taekwondo","Gimnasia Artística","Polo","Waterpolo"],
+    hints: {
+      "Fútbol":"Popular",
+      "Básquetbol":"Canasta",
+      "Tenis":"Raqueta",
+      "Béisbol":"Bate",
+      "Volleyball":"Red",
+      "Natación":"Piscina",
+      "Boxeo":"Guantes",
+      "Ciclismo":"Pedales",
+      "Fórmula 1":"Velocidad",
+      "Golf":"Hoyos",
+      "Rugby":"Try",
+      "Ajedrez":"Casillas",
+      "Skateboard":"Trucos",
+      "Surf":"Olas",
+      "MMA":"Jaula",
+      "Atletismo":"Correr",
+      "Esgrima":"Espada",
+      "Billar":"Taco",
+      "Ping Pong":"Mesa",
+      "Halterofilia":"Pesas",
+      "Triatlón":"Tres",
+      "Hockey":"Disco",
+      "Escalada":"Roca",
+      "Lucha Libre":"Máscara",
+      "Arquería":"Flecha",
+      "Parkour":"Saltos",
+      "Taekwondo":"Patadas",
+      "Gimnasia Artística":"Acrobacia",
+      "Polo":"Caballo",
+      "Waterpolo":"Portero"
+    }
+  },
+  "Personajes Animados": {
+    emoji: "🎬",
+    words: ["Bob Esponja","Patrick","Tom y Jerry","Bugs Bunny","Scooby-Doo","Los Simpsons","Peppa Pig","Doraemon","Dragon Ball","Naruto","Batman Animado","Shrek","Pikachu","Mickey Mouse","Goku","Stitch","Woody","Buzz Lightyear","Bluey","Phineas y Ferb","Avatar Aang","Danny Phantom","Kim Posible","Timmy Turner","Jimmy Neutron","Hey Arnold","Rugrats","Dexter","Johnny Bravo","Ed Edd Eddy","Las Chicas Superpoderosas","South Park","Futurama","Finn y Jake","Steven Universe"],
+    hints: {
+      "Bob Esponja":"Piña",
+      "Patrick":"Estrella",
+      "Tom y Jerry":"Persecución",
+      "Bugs Bunny":"Zanahoria",
+      "Scooby-Doo":"Misterio",
+      "Los Simpsons":"Amarillo",
+      "Peppa Pig":"oink oink",
+      "Doraemon":"Bolsillo",
+      "Dragon Ball":"Esferas",
+      "Naruto":"Zorro",
+      "Rayo McQueen":"Ruedas",
+      "Shrek":"Pantano",
+      "Pikachu":"Eléctrico",
+      "Mickey Mouse":"Orejas",
+      "Goku":"Saiyajin",
+      "Stitch":"626",
+      "Woody":"Vaquero",
+      "Buzz Lightyear":"Infinito",
+      "Bluey":"Australia",
+      "Phineas y Ferb":"Inventos",
+      "Avatar Aang":"Elementos",
+      "Timmy Turner":"Deseos",
+      "Jimmy Neutron":"Genio",
+      "Rugrats":"Bebés",
+      "Dexter":"Laboratorio",
+      "Johnny Bravo":"Musculoso",
+      "Ed Edd Eddy":"Dulces",
+      "Las Chicas Superpoderosas":"Townsville",
+      "South Park":"Colorado",
+      "Futurama":"3000",
+      "Finn y Jake":"Aventura",
+      "Steven Universe":"Cristal"
+    }
+  },
+  "Famosos de Películas": {
+    emoji: "🦸",
+    words: ["Toretto","Capitán América","Hulk","Tony Stark","La Roca","Thanos","Thor","Wonder Woman","Joker","Batman","Superman","Spiderman","Wolverine","Jack Sparrow","John Wick","Hermione Granger","Frodo","Gandalf","Darth Vader","Han Solo","James Bond","Terminator","Neo","Indiana Jones","Ethan Hunt","Rambo","Rocky","Forrest Gump","El Padrino","Jack Torrance","Black Panther","Doctor Strange","Aquaman","Pennywise","El Depredador"],
+    hints: {
+      "Toretto":"Familia",
+      "Capitán América":"Escudo",
+      "Hulk":"Verde",
+      "Tony Stark":"Armadura",
+      "La Roca":"SinCamisa",
+      "Thanos":"Guante",
+      "Thor":"Martillo",
+      "Wonder Woman":"Lazo",
+      "Joker":"Caos",
+      "Batman":"Murciélago",
+      "Superman":"Capa",
+      "Spiderman":"Telaraña",
+      "Wolverine":"Garras",
+      "Jack Sparrow":"Brújula",
+      "John Wick":"Perro",
+      "Gandalf":"NoPasarás",
+      "Darth Vader":"Respirador",
+      "Terminator":"Volveré",
+      "Rambo":"Sobrevive",
+      "Rocky":"Boxeo",
+      "Jack Torrance":"AquíJohnny",
+      "Black Panther":"Vibranio",
+      "Doctor Strange":"Hechicero",
+      "Aquaman":"Tridente",
+      "Pennywise":"Payaso",
+      "El Depredador":"Cazador"
+    }
+  },
+  "Países": {
+    emoji: "🌍",
+    words: ["México","Brasil","Argentina","Estados Unidos","España","Francia","Alemania","Italia","Japón","China","India","Colombia","Perú","Chile","Venezuela","Rusia","Canadá","Australia","Egipto","Sudáfrica","Corea del Sur","Turquía","Arabia Saudita","Israel","Grecia","Portugal","Holanda","Bélgica","Suiza","Noruega","Guatemala","Costa Rica","Cuba","Panamá","Uruguay"],
+    hints: {
+      "México":"Tacos",
+      "Brasil":"Samba",
+      "Argentina":"Tango",
+      "Estados Unidos":"Libertad",
+      "España":"Flamenco",
+      "Francia":"Torre",
+      "Alemania":"Cerveza",
+      "Italia":"Pizza",
+      "Japón":"Sushi",
+      "China":"Muralla",
+      "India":"TajMahal",
+      "Colombia":"Café",
+      "Perú":"MachuPicchu",
+      "Chile":"Largo",
+      "Venezuela":"Arepas",
+      "Rusia":"Vodka",
+      "Canadá":"Arce",
+      "Australia":"Canguro",
+      "Egipto":"Pirámides",
+      "Sudáfrica":"Mandela",
+      "Corea del Sur":"KPop",
+      "Turquía":"Kebab",
+      "Arabia Saudita":"Desierto",
+      "Israel":"Muro",
+      "Grecia":"Partenón",
+      "Portugal":"Fado",
+      "Holanda":"Molinos",
+      "Bélgica":"Chocolate",
+      "Suiza":"Relojes",
+      "Noruega":"Fiordos",
+      "Guatemala":"Tikal",
+      "Costa Rica":"PuraVida",
+      "Cuba":"Habano",
+      "Panamá":"Canal",
+      "Uruguay":"Tranquilo"
+    }
+  },
+  "Apps y Plataformas": {
+    emoji: "📱",
+    words: ["YouTube","Spotify","Facebook","WhatsApp","Instagram","TikTok","Netflix","Twitter","Snapchat","Telegram","LinkedIn","Uber","Airbnb","Amazon","Google Maps","Pinterest","Twitch","Discord","PayPal","Zoom","Shazam","Duolingo","Minecraft","Roblox","Google","Waze","Tinder","Reddit","CapCut","ChatGPT","Prime Video","Fortnite","Steam","Canva","BeReal"],
+    hints: {
+      "YouTube":"Videos",
+      "Spotify":"Música",
+      "Facebook":"Mark",
+      "WhatsApp":"Mensajes",
+      "Instagram":"Fotos",
+      "TikTok":"Virales",
+      "Netflix":"Series",
+      "Twitter":"Tweets",
+      "Snapchat":"Desaparece",
+      "Telegram":"Cifrado",
+      "LinkedIn":"Trabajo",
+      "Uber":"Taxi",
+      "Airbnb":"Renta",
+      "Amazon":"Tienda",
+      "Google Maps":"Navegación",
+      "Pinterest":"Ideas",
+      "Twitch":"Streaming",
+      "Discord":"Gamers",
+      "PayPal":"Dinero",
+      "Zoom":"Videollamada",
+      "Shazam":"Canción",
+      "Duolingo":"Búho",
+      "Minecraft":"Bloques",
+      "Roblox":"Crear",
+      "Google":"Buscar",
+      "Waze":"Tráfico",
+      "Tinder":"Deslizar",
+      "Reddit":"Foros",
+      "CapCut":"Editar",
+      "ChatGPT":"IA",
+      "Prime Video":"Amazon",
+      "Fortnite":"Battle",
+      "Steam":"Juegos",
+      "Canva":"Diseño",
+      "BeReal":"Auténtico"
+    }
+  },
+  "Personajes Bíblicos": {
+    emoji: "✝️",
+    words: ["Moisés","Abraham","David","Goliat","Sansón","Adán","Eva","Noé","Salomón","Josué","Daniel","María","José","Jonás","Elías","Jeremías","Isaías","Juan el Bautista","Pedro","Pablo","Ester","Rut","Débora","Rahab","Gedeón","Ezequiel","Zacarías","Tomás","Judas Iscariote","Herodes","Caleb","Miriam","Magdalena","Bernabé","Rebeca"],
+    hints: {
+      "Moisés":"Tablas",
+      "Abraham":"Fé",
+      "David":"Gigante",
+      "Goliat":"Filisteo",
+      "Sansón":"Cabello",
+      "Adán":"Edén",
+      "Eva":"Fruto",
+      "Noé":"Arca",
+      "Salomón":"Sabio",
+      "Daniel":"Leones",
+      "Virgen María":"Madre",
+      "José":"Egipto",
+      "Jonás":"Pez",
+      "Elías":"Fuego",
+      "Jeremías":"Llanto",
+      "Isaías":"Mesías",
+      "Juan el Bautista":"Jordán",
+      "Pedro":"Negar",
+      "Tomás":"Dudar",
+      "Judas Iscariote":"Monedas",
+    }
+  },
+
+  "Cómics": {
+  emoji: "📚",
+  words: ["Spider-Man","Batman","Superman","Wonder Woman","Wolverine","Iron Man","Capitán América","Thor","Hulk","Flash","Linterna Verde","Deadpool","Daredevil","Punisher","Black Widow","Doctor Strange","Aquaman","Shazam","Catwoman","Joker","Harley Quinn","Venom","Magneto","Profesor X","Tormenta","Mística","Nightcrawler","Gambito","Cíclope","Robin","Linterna Amarilla","Antorcha Humana","Mister Fantástico","Thing","Mujer Invisible"],
+  hints: {
+    "Spider-Man":"Telarañas",
+    "Batman":"Murciélago",
+    "Superman":"Krypton",
+    "Wonder Woman":"Lazo",
+    "Wolverine":"Garras",
+    "Iron Man":"Armadura",
+    "Capitán América":"Escudo",
+    "Thor":"Martillo",
+    "Hulk":"Ira",
+    "Flash":"Velocidad",
+    "Linterna Verde":"Voluntad",
+    "Deadpool":"Mercenario",
+    "Daredevil":"HellsKitchen",
+    "Punisher":"Venganza",
+    "Black Widow":"Viuda",
+    "Doctor Strange":"OjoAgamotto",
+    "Aquaman":"Atlántida",
+    "Shazam":"¡Shazam!",
+    "Catwoman":"Garra",
+    "Joker":"Risa",
+    "Harley Quinn":"Pingüino",
+    "Venom":"Simbionte",
+    "Tormenta":"Clima",
+    "Linterna Amarilla":"Parásito",
+    "Antorcha Humana":"Hiroshima",
+    "Mujer Invisible":"Invisibilidad"
+
+  }
+}
+};
+
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+var state = {
+  playerCount: 3,
+  playerNames: [],
+  impostorCount: 1,
+  hintsEnabled: false,
+  roundMinutes: 3,
+  selectedCategories: [],
+  wordMode: "categories",
+  customWord: "",
+  players: [],
+  revealIndex: 0,          /* <-- single source of truth for reveal position */
+  revealList: [],          /* list of player indices to reveal (queue) */
+  cardFlipped: false,
+  timerInterval: null,
+  timerSeconds: 0,
+  timerPaused: false,
+  round: 1,
+  eliminatedPlayers: [],
+  currentCategory: "",
+  currentWord: "",
+  currentHint: "",
+  selectedVote: null,
+  totalCircum: 389.6
+};
+
+/* ============================================================
+   PARTICLES
+   ============================================================ */
+(function() {
+  var c = document.getElementById("particles");
+  var colors = ["#ff2d78","#c044ff","#49b999","#f0b8e2","#00ffe7"];
+  for (var i = 0; i < 22; i++) {
+    var p = document.createElement("div");
+    p.className = "particle";
+    var size = Math.random() * 5 + 2;
+    p.style.cssText = "width:"+size+"px;height:"+size+"px;left:"+(Math.random()*100)+"%;"+
+      "background:"+colors[Math.floor(Math.random()*colors.length)]+";"+
+      "box-shadow:0 0 "+(size*3)+"px "+colors[Math.floor(Math.random()*colors.length)]+";"+
+      "animation-duration:"+(Math.random()*14+8)+"s;animation-delay:"+(Math.random()*14)+"s";
+    c.appendChild(p);
+  }
+})();
+
+/* ============================================================
+   UTILS
+   ============================================================ */
+function showScreen(id) {
+  var screens = document.querySelectorAll(".screen");
+  for (var i = 0; i < screens.length; i++) screens[i].classList.add("hidden");
+  document.getElementById(id).classList.remove("hidden");
+}
+function shuffle(arr) {
+  for (var i = arr.length-1; i > 0; i--) {
+    var j = Math.floor(Math.random()*(i+1));
+    var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+  }
+  return arr;
+}
+function showToast(msg) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  setTimeout(function(){ t.classList.remove("show"); }, 3000);
+}
+
+/* ============================================================
+   SETUP
+   ============================================================ */
+function buildPlayerCountGrid() {
+  var g = document.getElementById("player-count-grid");
+  g.innerHTML = "";
+  for (var i = 1; i <= 12; i++) {
+    var b = document.createElement("button");
+    b.className = "num-btn"+(i===state.playerCount?" active":"");
+    b.textContent = i;
+    (function(n){ b.onclick = function(){
+      state.playerCount = n;
+      buildPlayerCountGrid(); buildNamesGrid(); updateImpostors(state.impostorCount);
+    };})(i);
+    g.appendChild(b);
+  }
+}
+function buildNamesGrid() {
+  var g = document.getElementById("names-grid");
+  g.innerHTML = "";
+  for (var i = 0; i < state.playerCount; i++) {
+    var wrap = document.createElement("div"); wrap.className = "name-wrap";
+    var lbl = document.createElement("label"); lbl.textContent = "JUGADOR "+(i+1);
+    var inp = document.createElement("input");
+    inp.className = "name-input"; inp.type = "text";
+    inp.placeholder = "Jugador "+(i+1); inp.value = state.playerNames[i]||""; inp.maxLength = 20;
+    (function(idx){ inp.oninput = function(e){ state.playerNames[idx] = e.target.value; }; })(i);
+    wrap.appendChild(lbl); wrap.appendChild(inp); g.appendChild(wrap);
+  }
+}
+function buildCatGrid() {
+  var g = document.getElementById("cat-grid"); g.innerHTML = "";
+  var keys = Object.keys(CATEGORIES);
+  for (var i = 0; i < keys.length; i++) {
+    var cat = keys[i];
+    var btn = document.createElement("button");
+    btn.className = "cat-chip"+(state.selectedCategories.indexOf(cat)>=0?" active":"");
+    btn.textContent = CATEGORIES[cat].emoji+" "+cat;
+    (function(c){ btn.onclick = function(){
+      var idx = state.selectedCategories.indexOf(c);
+      if (idx>=0) state.selectedCategories.splice(idx,1); else state.selectedCategories.push(c);
+      buildCatGrid();
+    };})(cat);
+    g.appendChild(btn);
+  }
+}
+function toggleAllCats() {
+  var all = Object.keys(CATEGORIES);
+  state.selectedCategories = (state.selectedCategories.length===all.length) ? [] : all.slice();
+  buildCatGrid();
+}
+function updateImpostors(v) {
+  state.impostorCount = parseInt(v);
+  document.getElementById("imp-val").textContent = v;
+  document.getElementById("imp-slider").value = v;
+  var max = Math.max(1, Math.floor((state.playerCount-1)/2));
+  document.getElementById("imp-max-label").textContent = "máx. recomendado: "+max;
+}
+function updateTimer(v) {
+  state.roundMinutes = parseInt(v);
+  document.getElementById("timer-val").textContent = v;
+}
+function setWordMode(mode) {
+  state.wordMode = mode;
+  var btns = document.querySelectorAll(".word-mode-btn");
+  for (var i = 0; i < btns.length; i++)
+    btns[i].classList.toggle("active", btns[i].dataset.mode===mode);
+  document.getElementById("panel-categories").style.display = mode==="categories"?"block":"none";
+  document.getElementById("panel-random").style.display    = mode==="random"?"block":"none";
+  document.getElementById("panel-custom").style.display    = mode==="custom"?"block":"none";
+}
+
+/* Init */
+buildPlayerCountGrid(); buildNamesGrid(); buildCatGrid();
+document.getElementById("imp-slider").addEventListener("input",function(e){ updateImpostors(e.target.value); });
+document.getElementById("timer-slider").addEventListener("input",function(e){ updateTimer(e.target.value); });
+document.getElementById("hints-toggle").addEventListener("change",function(e){ state.hintsEnabled=e.target.checked; });
+document.getElementById("custom-word-input").addEventListener("input",function(e){ state.customWord=e.target.value.trim(); });
+
+/* ============================================================
+   PICK WORD
+   ============================================================ */
+function pickWord() {
+  if (state.wordMode==="custom")
+    return { word:state.customWord, hint:"Definida por quien configuró el juego", category:"Personalizada" };
+  var keys = state.wordMode==="random" ? Object.keys(CATEGORIES) : state.selectedCategories;
+  var cat  = keys[Math.floor(Math.random()*keys.length)];
+  var data = CATEGORIES[cat];
+  var word = data.words[Math.floor(Math.random()*data.words.length)];
+  return { word:word, hint:data.hints[word]||"Sin pista disponible", category:cat };
+}
+
+/* ============================================================
+   START GAME — builds players and launches reveal queue
+   ============================================================ */
+function startGame() {
+  var errEl = document.getElementById("setup-error"); errEl.textContent = "";
+  if (state.wordMode==="categories" && state.selectedCategories.length===0) { errEl.textContent="Elige al menos una categoría"; return; }
+  if (state.wordMode==="custom" && !state.customWord) { errEl.textContent="Escribe una palabra personalizada"; return; }
+  if (state.impostorCount>=state.playerCount) { errEl.textContent="Debe haber más civiles que impostores"; return; }
+
+  for (var i = 0; i < state.playerCount; i++)
+    if (!state.playerNames[i]||!state.playerNames[i].trim()) state.playerNames[i]="Jugador "+(i+1);
+
+  var picked = pickWord();
+  state.currentWord = picked.word; state.currentCategory = picked.category; state.currentHint = picked.hint;
+
+  var idx = []; for (var j=0;j<state.playerCount;j++) idx.push(j); idx = shuffle(idx);
+  var impSet = {}; for (var k=0;k<state.impostorCount;k++) impSet[idx[k]]=true;
+  state.players = [];
+  for (var m=0;m<state.playerCount;m++) {
+    var isImp = !!impSet[m];
+    state.players.push({ name:state.playerNames[m], role:isImp?"impostor":"civilian",
+      word:isImp?"???":picked.word, hint:isImp?picked.hint:null });
+  }
+  state.eliminatedPlayers = []; state.round = 1;
+
+  /* Build full reveal queue — all players in order */
+  state.revealList = []; for (var n=0;n<state.playerCount;n++) state.revealList.push(n);
+  state.revealIndex = 0; state.cardFlipped = false;
+  renderRevealSlide(); showScreen("reveal");
+}
+
+/* ============================================================
+   REVEAL — single unified renderer, no queueMode flag needed
+   ============================================================ */
+function renderRevealSlide() {
+  state.cardFlipped = false;
+  var pos      = state.revealIndex;
+  var total    = state.revealList.length;
+  var pIdx     = state.revealList[pos];   /* actual player array index */
+  var player   = state.players[pIdx];
+  var pct      = Math.round(((pos+1)/total)*100);
+
+  document.getElementById("prog-label").textContent = "Jugador "+(pos+1)+" de "+total;
+  document.getElementById("prog-pct").textContent   = pct+"%";
+  document.getElementById("prog-fill").style.width  = pct+"%";
+  document.getElementById("reveal-name").textContent = player.name;
+  document.getElementById("reveal-sub").textContent  = "Toca la carta para ver tu rol";
+
+  /* Reset card to back */
+  document.getElementById("the-card").classList.remove("flipped");
+  document.getElementById("card-front").className = "card-face card-front";
+  document.getElementById("card-hint-label").style.display = "none";
+
+  /* Button locked until reveal */
+  var btn = document.getElementById("btn-pass");
+  btn.disabled = true; btn.textContent = "Revelar primero"; btn.className = "btn-pass";
+  document.getElementById("pass-hint").textContent = "";
+}
+
+function flipCard() {
+  if (state.cardFlipped) return;
+  state.cardFlipped = true;
+
+  var pos    = state.revealIndex;
+  var pIdx   = state.revealList[pos];
+  var player = state.players[pIdx];
+  var isImp  = player.role==="impostor";
+  var front  = document.getElementById("card-front");
+  var glow   = document.getElementById("card-glow");
+
+  if (isImp) {
+    front.className = "card-face card-front impostor-card";
+    glow.className  = "glow-ring impostor-glow";
+    document.getElementById("card-icon").textContent       = "🕵️";
+    document.getElementById("card-role-label").textContent = "¡ERES EL IMPOSTOR!";
+    document.getElementById("card-word").textContent       = "???";
+    if (state.hintsEnabled && player.hint) {
+      document.getElementById("card-hint-label").style.display = "block";
+      document.getElementById("card-hint-text").textContent    = player.hint;
+    }
+    document.getElementById("reveal-sub").textContent = "Cuidado, no te descubran 🤫";
+  } else {
+    front.className = "card-face card-front civilian-card";
+    glow.className  = "glow-ring civilian-glow";
+    document.getElementById("card-icon").textContent       = "👤";
+    document.getElementById("card-role-label").textContent = "¡ERES CIVIL!";
+    document.getElementById("card-word").textContent       = player.word;
+    document.getElementById("card-hint-label").style.display = "none";
+    document.getElementById("reveal-sub").textContent = "Recuerda la palabra. No la digas 🤐";
+  }
+  document.getElementById("the-card").classList.add("flipped");
+
+  /* Unlock pass button */
+  var btn  = document.getElementById("btn-pass");
+  var isLast = (pos === state.revealList.length-1);
+  btn.disabled = false; btn.className = "btn-pass ready";
+  if (isLast) {
+    btn.textContent = "🚀 COMENZAR JUEGO";
+    document.getElementById("pass-hint").textContent = "Todos vieron su rol";
+  } else {
+    var nextPIdx = state.revealList[pos+1];
+    btn.textContent = "Pasar a "+state.players[nextPIdx].name+" →";
+    document.getElementById("pass-hint").textContent = "Asegúrate de que nadie más vea la pantalla";
+  }
+}
+
+function nextPlayer() {
+  if (!state.cardFlipped) return;
+  var isLast = (state.revealIndex === state.revealList.length-1);
+  if (isLast) {
+    startGameScreen();
+  } else {
+    state.revealIndex++;
+    renderRevealSlide();
+  }
+}
+
+/* ============================================================
+   GAME SCREEN
+   ============================================================ */
+function startGameScreen() {
+  var active = 0, activeImps = 0;
+  for (var i=0;i<state.players.length;i++) {
+    if (state.eliminatedPlayers.indexOf(i)<0) {
+      active++;
+      if (state.players[i].role==="impostor") activeImps++;
+    }
+  }
+  document.getElementById("ri-round").textContent     = state.round;
+  document.getElementById("ri-players").textContent   = active;
+  document.getElementById("ri-impostors").textContent = activeImps;
+  var modeLabel = state.wordMode==="random"?"Aleatorio":state.wordMode==="custom"?"Custom":state.currentCategory.substring(0,9);
+  document.getElementById("ri-cat").textContent = modeLabel;
+  startTimer(); showScreen("game");
+}
+
+var timerTotal = 0;
+function startTimer() {
+  clearInterval(state.timerInterval);
+  state.timerSeconds = state.roundMinutes*60; timerTotal = state.timerSeconds;
+  state.timerPaused = false;
+  document.getElementById("pause-btn").textContent = "⏸ PAUSAR";
+  document.getElementById("timer-display").classList.remove("timer-paused");
+  updateTimerDisplay();
+  state.timerInterval = setInterval(tickTimer,1000);
+}
+function tickTimer() {
+  if (state.timerPaused) return;
+  state.timerSeconds--;
+  updateTimerDisplay();
+  if (state.timerSeconds<=0) {
+    clearInterval(state.timerInterval);
+    showToast("⏰ ¡Tiempo agotado! ¡Voten ahora!");
+    setTimeout(showVote,1500);
+  }
+}
+function updateTimerDisplay() {
+  var m=Math.floor(state.timerSeconds/60), s=state.timerSeconds%60;
+  document.getElementById("timer-display").textContent = m+":"+(s<10?"0":"")+s;
+  var arc   = document.getElementById("timer-arc");
+  var ratio = timerTotal>0 ? state.timerSeconds/timerTotal : 0;
+  arc.style.strokeDashoffset = state.totalCircum*(1-ratio);
+  if (ratio<0.25) arc.className="timer-arc danger";
+  else if (ratio<0.5) arc.className="timer-arc warn";
+  else arc.className="timer-arc";
+}
+function toggleTimer() {
+  state.timerPaused = !state.timerPaused;
+  document.getElementById("pause-btn").textContent = state.timerPaused?"▶ REANUDAR":"⏸ PAUSAR";
+  var d = document.getElementById("timer-display");
+  if (state.timerPaused) d.classList.add("timer-paused"); else d.classList.remove("timer-paused");
+}
+
+/* ============================================================
+   NEW ROUND
+   ============================================================ */
+function newRound() {
+  state.round++;
+  var picked = pickWord();
+  state.currentWord = picked.word; state.currentCategory = picked.category; state.currentHint = picked.hint;
+
+  /* Active players only */
+  var activeIdx = [];
+  for (var i=0;i<state.players.length;i++)
+    if (state.eliminatedPlayers.indexOf(i)<0) activeIdx.push(i);
+
+  var shuffled = shuffle(activeIdx.slice()), impSet = {};
+  for (var k=0;k<Math.min(state.impostorCount,shuffled.length);k++) impSet[shuffled[k]]=true;
+  for (var j=0;j<activeIdx.length;j++) {
+    var i2=activeIdx[j], isImp=!!impSet[i2];
+    state.players[i2].role = isImp?"impostor":"civilian";
+    state.players[i2].word = isImp?"???":picked.word;
+    state.players[i2].hint = isImp?picked.hint:null;
+  }
+
+  /* Rebuild reveal queue with active players only */
+  state.revealList  = activeIdx.slice();
+  state.revealIndex = 0; state.cardFlipped = false;
+  renderRevealSlide(); showScreen("reveal");
+}
+
+/* ============================================================
+   VOTE
+   ============================================================ */
+function showVote() {
+  clearInterval(state.timerInterval); state.selectedVote = null;
+  var list = document.getElementById("vote-list"); list.innerHTML = "";
+  for (var i=0;i<state.players.length;i++) {
+    if (state.eliminatedPlayers.indexOf(i)>=0) continue;
+    var card = document.createElement("div"); card.className = "vote-card";
+    card.innerHTML = "<div class=\"vc-num\">"+(i+1)+"</div><div>"+state.players[i].name+"</div>";
+    (function(idx){ card.onclick = function(){
+      var cards = document.querySelectorAll(".vote-card");
+      for (var j=0;j<cards.length;j++) cards[j].classList.remove("selected");
+      card.classList.add("selected"); state.selectedVote = idx;
+      document.getElementById("confirm-vote-btn").disabled = false;
+    }; })(i);
+    list.appendChild(card);
+  }
+  document.getElementById("confirm-vote-btn").disabled = true;
+  showScreen("vote");
+}
+function resumeGame() { startTimer(); showScreen("game"); }
+function confirmVote() {
+  if (state.selectedVote===null) return;
+  var eliminated = state.players[state.selectedVote];
+  state.eliminatedPlayers.push(state.selectedVote);
+  var remImps=0, remCivs=0;
+  for (var i=0;i<state.players.length;i++) {
+    if (state.eliminatedPlayers.indexOf(i)>=0) continue;
+    if (state.players[i].role==="impostor") remImps++; else remCivs++;
+  }
+  if (remImps===0) {
+    showResult(true, eliminated.name+" era el Impostor. ¡Los civiles ganan!");
+  } else if (remImps>=remCivs) {
+    showResult(false, "Los impostores igualan a los civiles. ¡Ellos ganan!");
+  } else if (eliminated.role!=="impostor") {
+    showToast("😬 "+eliminated.name+" era CIVIL. ¡El juego continúa!");
+    setTimeout(function(){ startGameScreen(); showScreen("game"); }, 1800);
+  } else {
+    showToast("✅ "+eliminated.name+" era Impostor. ¡Sigan buscando!");
+    setTimeout(function(){ startGameScreen(); showScreen("game"); }, 1800);
+  }
+}
+
+/* ============================================================
+   RESULT
+   ============================================================ */
+function showResult(civilsWin, subtitle) {
+  clearInterval(state.timerInterval);
+  var result = document.getElementById("result");
+  var badge  = document.getElementById("result-badge");
+  if (civilsWin) {
+    badge.className = "result-badge good"; badge.textContent = "🎉";
+    document.getElementById("result-title").textContent = "¡Los Civiles Ganaron!";
+    result.className = "screen hidden"; launchConfetti();
+  } else {
+    badge.className = "result-badge bad"; badge.textContent = "🕵️";
+    document.getElementById("result-title").textContent = "¡Los Impostores Ganaron!";
+    result.className = "screen hidden impostor-win";
+  }
+  document.getElementById("result-sub").textContent = subtitle;
+  var list = document.getElementById("revealed-list");
+  list.innerHTML = "<div class=\"rl-title\">REVELACIÓN FINAL</div>"+
+    "<div class=\"rl-word-info\">Categoría: <strong>"+state.currentCategory+"</strong> · Palabra: <strong>"+state.currentWord+"</strong></div>";
+  for (var i=0;i<state.players.length;i++) {
+    var p=state.players[i], isElim=state.eliminatedPlayers.indexOf(i)>=0;
+    var row=document.createElement("div"); row.className="rl-row";
+    row.innerHTML="<span class=\"rl-role "+(p.role==="impostor"?"imp":"civ")+"\">"+(p.role==="impostor"?"IMPOSTOR":"CIVIL")+"</span>"+
+      "<span class=\"rl-name\">"+p.name+(isElim?" ☠️":"")+"</span>"+
+      "<span class=\"rl-word\">"+(p.role==="impostor"?"???":state.currentWord)+"</span>";
+    list.appendChild(row);
+  }
+  showScreen("result");
+}
+
+/* ============================================================
+   CONFETTI
+   ============================================================ */
+function launchConfetti() {
+  var canvas=document.getElementById("confetti-canvas"), ctx=canvas.getContext("2d");
+  canvas.width=window.innerWidth; canvas.height=window.innerHeight;
+  var colors=["#ff2d78","#c044ff","#49b999","#f0b8e2","#00ffe7","#ffffff"];
+  var parts=[];
+  for (var i=0;i<160;i++) parts.push({x:Math.random()*canvas.width,y:-20,w:Math.random()*12+4,h:Math.random()*6+4,
+    color:colors[Math.floor(Math.random()*colors.length)],vx:(Math.random()-0.5)*6,vy:Math.random()*4+2,rot:Math.random()*360,rotV:(Math.random()-0.5)*10});
+  var frame=0;
+  function draw(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for (var i=0;i<parts.length;i++){
+      var p=parts[i]; p.x+=p.vx; p.y+=p.vy; p.rot+=p.rotV;
+      ctx.save(); ctx.translate(p.x+p.w/2,p.y+p.h/2); ctx.rotate(p.rot*Math.PI/180);
+      ctx.fillStyle=p.color; ctx.fillRect(-p.w/2,-p.h/2,p.w,p.h); ctx.restore();
+    }
+    if (++frame<220) requestAnimationFrame(draw); else ctx.clearRect(0,0,canvas.width,canvas.height);
+  }
+  draw();
+}
+
+/* ============================================================
+   REPLAY / HOME
+   ============================================================ */
+function replaySetup() {
+  clearInterval(state.timerInterval);
+  state.eliminatedPlayers=[]; state.round=1;
+  startGame();
+}
+function goHome() {
+  clearInterval(state.timerInterval);
+  state.eliminatedPlayers=[]; state.round=1;
+  showScreen("splash");
+}
+</script>
+</body>
+</html>
