@@ -60,15 +60,15 @@
 .splash-logo .eye {
   width: auto;
   height: 260px;          /* Altura controlada, ni muy chica ni enorme */
-  max-width: 80%;
+  max-width: 150%;
   display: block;
-  margin: 0 auto 20px auto;
+  margin: 20 auto 20px auto;
   animation: pulse 2s ease-in-out infinite;
   filter: drop-shadow(0 0 20px var(#8a5a9a ));
   object-fit: contain;
 }
   @keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12);filter:drop-shadow(0 0 35px var(--neon-pink))} }
-  .splash-logo h1 { font-size:clamp(48px,10vw,96px); font-weight:800; letter-spacing:-2px; line-height:0.9;
+  .splash-logo h2 { font-size:clamp(48px,10vw,96px); font-weight:700; letter-spacing:-2px; line-height:0.9;
     background:linear-gradient(135deg, #f0b8e2 0%, #de2270 35%, #e044ff 65%, #49b999 100%);
     -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
     filter:drop-shadow(0 0 30px rgba(222,34,112,0.6)); }
@@ -300,7 +300,7 @@
 <div id="splash" class="screen active">
     <div class="splash-logo">
       <img src="11.png" alt="Impostor" class="eye">
-      <h1>IMPOSTOR</h1>
+      <h2>IMPOSTOR</h2>
       <p>JUEGO LOCAL, MISMA MESA</p>
       <br>
       <button class="btn-play" onclick="showScreen('setup')">▶ JUGAR</button>
