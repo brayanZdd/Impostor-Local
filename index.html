@@ -191,6 +191,43 @@
   .btn-pass.ready:hover { transform:scale(1.04); box-shadow:0 0 50px rgba(222,34,112,0.8), 0 0 80px rgba(192,68,255,0.5); }
   .pass-hint { font-size:12px; color:var(--muted); margin-top:10px; font-family:'Space Mono',monospace; text-align:center; }
 
+/* ---- FIRST PLAYER PICKER ---- */
+#firstpick { background:radial-gradient(ellipse at 50% 30%, #2a0040 0%, #0d0015 70%); }
+.fp-title { font-size:16px; font-weight:700; letter-spacing:4px; text-transform:uppercase; color:var(--muted); margin-bottom:6px; font-family:'Space Mono',monospace; }
+.fp-subtitle { font-size:13px; color:var(--muted); margin-bottom:40px; font-family:'Space Mono',monospace; text-align:center; }
+.fp-reel-wrap { position:relative; width:300px; margin-bottom:36px; }
+.fp-reel-outer { width:300px; height:72px; overflow:hidden; border-radius:16px; position:relative;
+  border:2px solid var(--neon-purp); box-shadow:0 0 30px rgba(192,68,255,0.4), inset 0 0 20px rgba(0,0,0,0.5); }
+.fp-reel-outer::before, .fp-reel-outer::after {
+  content:''; position:absolute; left:0; right:0; height:24px; z-index:2; pointer-events:none; }
+.fp-reel-outer::before { top:0; background:linear-gradient(to bottom, rgba(13,0,21,0.95), transparent); }
+.fp-reel-outer::after { bottom:0; background:linear-gradient(to top, rgba(13,0,21,0.95), transparent); }
+.fp-reel-outer .fp-hl {
+  position:absolute; left:0; right:0; top:50%; transform:translateY(-50%);
+  height:72px; border-top:1.5px solid rgba(255,45,120,0.6); border-bottom:1.5px solid rgba(255,45,120,0.6);
+  box-shadow:0 0 20px rgba(255,45,120,0.3); z-index:1; pointer-events:none; }
+.fp-reel { display:flex; flex-direction:column; will-change:transform; }
+.fp-reel-item { height:72px; display:flex; align-items:center; justify-content:center;
+  font-size:22px; font-weight:800; letter-spacing:1px; flex-shrink:0; transition:color 0.1s; }
+.fp-reel-item.active { color:var(--neon-pink); text-shadow:0 0 20px var(--neon-pink), 0 0 40px rgba(255,45,120,0.4); }
+.fp-reel-item.inactive { color:rgba(255,255,255,0.2); }
+.fp-arrow { position:absolute; right:-20px; top:50%; transform:translateY(-50%);
+  font-size:22px; filter:drop-shadow(0 0 8px var(--neon-pink)); animation:arrowPulse 0.6s ease-in-out infinite; }
+@keyframes arrowPulse { 0%,100%{transform:translateY(-50%) scale(1)} 50%{transform:translateY(-50%) scale(1.3)} }
+.fp-result-wrap { text-align:center; margin-bottom:32px; }
+.fp-result-name { font-size:36px; font-weight:800; margin-bottom:8px; }
+.fp-result-role-badge { display:inline-block; padding:8px 20px; border-radius:100px; font-size:14px; font-weight:700; letter-spacing:2px; margin-bottom:6px; }
+.fp-result-role-badge.civil { background:rgba(73,185,153,0.15); border:1.5px solid var(--civilian); color:var(--civilian); }
+.fp-result-role-badge.impostor { background:rgba(255,45,120,0.15); border:1.5px solid var(--neon-pink); color:var(--neon-pink); }
+.fp-result-desc { font-size:13px; color:var(--muted); font-family:'Space Mono',monospace; margin-top:8px; }
+.fp-result-right { font-size:13px; color:var(--muted); font-family:'Space Mono',monospace; margin-top:4px; }
+.btn-fp-go { padding:18px 56px; font-size:18px; font-weight:800; font-family:'Syne',sans-serif;
+  background:linear-gradient(135deg,var(--accent),var(--neon-purp)); color:#fff; border:none; border-radius:100px; cursor:pointer;
+  transition:all 0.4s; box-shadow:0 0 30px rgba(222,34,112,0.5); letter-spacing:1px;
+  opacity:0; transform:translateY(16px); pointer-events:none; }
+.btn-fp-go.visible { opacity:1; transform:translateY(0); pointer-events:auto; }
+.btn-fp-go:hover { box-shadow:0 0 50px rgba(222,34,112,0.8); transform:scale(1.04) translateY(0) !important; }
+
   /* ---- GAME ---- */
   #game { background:var(--bg); }
   .game-inner { width:100%; max-width:560px; }
@@ -406,7 +443,25 @@
   <button class="btn-pass" id="btn-pass" onclick="nextPlayer()" disabled>Revelar primero</button>
   <div class="pass-hint" id="pass-hint"></div>
 </div>
-
+<!-- FIRST PLAYER PICKER -->
+<div class="screen hidden" id="firstpick">
+  <div class="fp-title">¿Quién inicia?</div>
+  <div class="fp-subtitle">La ruleta decide quién habla primero</div>
+  <div class="fp-reel-wrap">
+    <div class="fp-reel-outer">
+      <div class="fp-hl"></div>
+      <div class="fp-reel" id="fp-reel"></div>
+    </div>
+    <div class="fp-arrow">◀</div>
+  </div>
+  <div class="fp-result-wrap" id="fp-result" style="display:none">
+    <div class="fp-result-name" id="fp-result-name">—</div>
+    <div class="fp-result-role-badge" id="fp-result-badge">CIVIL</div>
+    <div class="fp-result-desc" id="fp-result-desc"></div>
+    <div class="fp-result-right">🔄 Los turnos van hacia la derecha</div>
+  </div>
+  <button class="btn-fp-go" id="btn-fp-go" onclick="launchGame()">⏱ ¡Empezar Ronda!</button>
+</div>
 <!-- GAME -->
 <div class="screen hidden" id="game">
   <div class="game-inner">
@@ -515,7 +570,7 @@ var CATEGORIES = {
   },
   "Comidas": {
     emoji: "🍔",
-    words: ["Pizza","Hamburguesa","Sushi","Tacos","Hot Dog","Pasta","Ramen","Burrito","Nuggets","Arepa","Pupusa","Ceviche","Empanada","Waffle","Pancakes","Lasaña","Enchilada","Pad Thai","Pho","Shawarma","Croissant","Nachos","Paella","Gyros","Dim Sum","Falafel","Kebab","Tiramisu","Churros","Crepe","Bagel","Poke Bowl","Döner","Chow Mein","Bánh Mì","Manzana","Plátano","Naranja","Fresa","Uva","Sandía","Zanahoria","Brócoli","Lechuga","Tomate","Cebolla","Ajo","Pimiento","Aguacate","Pera"],
+    words: ["Pizza","Hamburguesa","Sushi","Tacos","Hot Dog","Pasta","Ramen","Burrito","Nuggets","Arepa","Pupusa","Ceviche","Empanada","Waffle","Pancakes","Lasaña","Enchilada","Croissant","Nachos","Tiramisu","Churros","Crepe","Manzana","Plátano","Naranja","Fresa","Uva","Sandía","Zanahoria","Brócoli","Lechuga","Tomate","Cebolla","Ajo","Pimiento","Pasta","Chow Mein","Aguacate","Pera"],
     hints: {
       "Pizza":"Horno",
       "Hamburguesa":"Carne",
@@ -566,7 +621,7 @@ var CATEGORIES = {
   },
   "Futbolistas": {
     emoji: "⚽",
-    words: ["Messi","Cristiano Ronaldo","Pelé","Maradona","Ronaldinho","Zidane","Neymar","Mbappé","Haaland","Beckham","Rivaldo","Ronaldo Nazário","Iniesta","Xavi","Buffon","Roberto Carlos","Cafu","Thierry Henry","Zlatan Ibrahimovic","Riquelme","Romario","Cantona","Platini","Figo","Del Piero","Pirlo","Lampard","Gerrard","Modric","De Bruyne","Vinicius Jr","Benzema","Van Dijk","Lewandowski","Suárez"],
+    words: ["Messi","Cristiano Ronaldo","Pelé","Maradona","Ronaldinho","Zidane","Neymar","Mbappé","Haaland","Beckham","Rivaldo","Ronaldo Nazário","Iniesta","Xavi","Buffon","Roberto Carlos","Cafu","Thierry Henry","Zlatan Ibrahimovic","Riquelme","Romario","Puyol","Pescado Ruiz","Figo","Del Piero","Pirlo","Lampard","Gerrard","Modric","De Bruyne","Vinicius Jr","Benzema","Van Dijk","Lewandowski","Suárez"],
     hints: {
       "Messi":"Barcelona",
       "Cristiano Ronaldo":"CR7",
@@ -606,7 +661,7 @@ var CATEGORIES = {
   },
   "Deportes y Juegos": {
     emoji: "🏆",
-    words: ["Fútbol","Básquetbol","Tenis","Béisbol","Volleyball","Natación","Boxeo","Ciclismo","Fórmula 1","Golf","Rugby","Ajedrez","Pádel","Skateboard","Surf","MMA","Atletismo","Esgrima","Billar","Ping Pong","Halterofilia","Triatlón","Cricket","Hockey","Snowboard","Escalada","Lucha Libre","Arquería","Karting","E-Sports","Parkour","Taekwondo","Gimnasia Artística","Polo","Waterpolo"],
+    words: ["Fútbol","Básquetbol","Tenis","Béisbol","Volleyball","Natación","Boxeo","Ciclismo","Moto GP","Golf","Rugby","Ajedrez","Skateboard","Surf","MMA","Atletismo","Esgrima","Billar","Ping Pong","Formula 1","Marcha","Kun Fu Panda","Hockey","Escalada","Lucha Libre","Arquería","Parkour","Taekwondo","Gimnasia Artística","Polo","Waterpolo"],
     hints: {
       "Fútbol":"Popular",
       "Básquetbol":"Canasta",
@@ -642,7 +697,7 @@ var CATEGORIES = {
   },
   "Personajes Animados": {
     emoji: "🎬",
-    words: ["Bob Esponja","Patrick","Tom y Jerry","Bugs Bunny","Scooby-Doo","Los Simpsons","Peppa Pig","Doraemon","Dragon Ball","Naruto","Batman Animado","Shrek","Pikachu","Mickey Mouse","Goku","Stitch","Woody","Buzz Lightyear","Bluey","Phineas y Ferb","Avatar Aang","Danny Phantom","Kim Posible","Timmy Turner","Jimmy Neutron","Hey Arnold","Rugrats","Dexter","Johnny Bravo","Ed Edd Eddy","Las Chicas Superpoderosas","South Park","Futurama","Finn y Jake","Steven Universe"],
+    words: ["Bob Esponja","Patrick","Tom y Jerry","Bugs Bunny","Scooby-Doo","Los Simpsons","Peppa Pig","Doraemon","Dragon Ball","Naruto","Batman","Shrek","Pikachu","Mickey Mouse","Goku","Stitch","Woody","Buzz Lightyear","Bluey","Phineas y Ferb","Avatar Aang","kICK Butowski","Pingu","Timmy Turner","Jimmy Neutron","Esportacus","Rugrats","Dexter","Johnny Bravo","Ed Edd Eddy","Las Chicas Superpoderosas","South Park","Futurama","Finn y Jake","Pantera Rosa","Steven Universe"],
     hints: {
       "Bob Esponja":"Piña",
       "Patrick":"Estrella",
@@ -680,7 +735,7 @@ var CATEGORIES = {
   },
   "Famosos de Películas": {
     emoji: "🦸",
-    words: ["Toretto","Capitán América","Hulk","Tony Stark","La Roca","Thanos","Thor","Wonder Woman","Joker","Batman","Superman","Spiderman","Wolverine","Jack Sparrow","John Wick","Hermione Granger","Frodo","Gandalf","Darth Vader","Han Solo","James Bond","Terminator","Neo","Indiana Jones","Ethan Hunt","Rambo","Rocky","Forrest Gump","El Padrino","Jack Torrance","Black Panther","Doctor Strange","Aquaman","Pennywise","El Depredador"],
+    words: ["Toretto","Capitán América","Hulk","Tony Stark","La Roca","Thanos","Thor","Wonder Woman","Joker","Batman","Superman","Spiderman","Wolverine","Jack Sparrow","John Wick","Groot","Francotirador","Garffield","Darth Vader","Terminator","Alien","Freddy Kruegger","Ghost Face","Rambo","Rocky","Black Panther","Doctor Strange","Aquaman","Pennywise","El Depredador"],
     hints: {
       "Toretto":"Familia",
       "Capitán América":"Escudo",
@@ -753,7 +808,7 @@ var CATEGORIES = {
   },
   "Apps y Plataformas": {
     emoji: "📱",
-    words: ["YouTube","Spotify","Facebook","WhatsApp","Instagram","TikTok","Netflix","Twitter","Snapchat","Telegram","LinkedIn","Uber","Airbnb","Amazon","Google Maps","Pinterest","Twitch","Discord","PayPal","Zoom","Shazam","Duolingo","Minecraft","Roblox","Google","Waze","Tinder","Reddit","CapCut","ChatGPT","Prime Video","Fortnite","Steam","Canva","BeReal"],
+    words: ["YouTube","Spotify","Facebook","WhatsApp","Instagram","TikTok","Netflix","Twitter","Snapchat","Telegram","LinkedIn","Uber","Airbnb","Amazon","Google Maps","Pinterest","Twitch","Discord","PayPal","Zoom","Shazam","Duolingo","Minecraft","Roblox","Google","Waze","Tinder","Reddit","CapCut","ChatGPT","Prime Video","Fortnite","Steam","Canva","ChatGPT"],
     hints: {
       "YouTube":"Videos",
       "Spotify":"Música",
@@ -789,12 +844,12 @@ var CATEGORIES = {
       "Fortnite":"Battle",
       "Steam":"Juegos",
       "Canva":"Diseño",
-      "BeReal":"Auténtico"
+      "ChatGPT":"Auténtico"
     }
   },
   "Personajes Bíblicos": {
     emoji: "✝️",
-    words: ["Moisés","Abraham","David","Goliat","Sansón","Adán","Eva","Noé","Salomón","Josué","Daniel","María","José","Jonás","Elías","Jeremías","Isaías","Juan el Bautista","Pedro","Pablo","Ester","Rut","Débora","Rahab","Gedeón","Ezequiel","Zacarías","Tomás","Judas Iscariote","Herodes","Caleb","Miriam","Magdalena","Bernabé","Rebeca"],
+    words: ["Moisés","Abraham","David","Goliat","Sansón","Adán","Eva","Noé","Salomón","Josué","Daniel","Virgen Maria","José","Jonás","Juan el Bautista","Pedro","Judas Iscariote",],
     hints: {
       "Moisés":"Tablas",
       "Abraham":"Fé",
@@ -814,18 +869,17 @@ var CATEGORIES = {
       "Isaías":"Mesías",
       "Juan el Bautista":"Jordán",
       "Pedro":"Negar",
-      "Tomás":"Dudar",
       "Judas Iscariote":"Monedas"
     }
   },
   "Cómics": {
     emoji: "📚",
-    words: ["Spider-Man","Batman","Superman","Wonder Woman","Wolverine","Iron Man","Capitán América","Thor","Hulk","Flash","Linterna Verde","Deadpool","Daredevil","Punisher","Black Widow","Doctor Strange","Aquaman","Shazam","Catwoman","Joker","Harley Quinn","Venom","Magneto","Profesor X","Tormenta","Mística","Nightcrawler","Gambito","Cíclope","Robin","Linterna Amarilla","Antorcha Humana","Mister Fantástico","Thing","Mujer Invisible"],
+    words: ["Spider-Man","Batman","Superman","Mujer Maravilla","Wolverine","Iron Man","Capitán América","Thor","Hulk","Flash","Linterna Verde","Deadpool","Rocket Guardianes de la Galaxia","Punisher","Black Widow","Doctor Strange","Aquaman","Antman","Catwoman","Joker","Harley Quinn","Venom","Tormenta","Antorcha Humana","Mujer Invisible"],
     hints: {
       "Spider-Man":"Picadura",
       "Batman":"Huérfano",
       "Superman":"Kryptonita",
-      "Wonder Woman":"Lazo",
+      "Mujer Maravilla":"Lazo",
       "Wolverine":"Adamantium",
       "Iron Man":"Reactor",
       "Capitán América":"Congelado",
@@ -834,7 +888,7 @@ var CATEGORIES = {
       "Flash":"Velocidad",
       "Linterna Verde":"Anillo",
       "Deadpool":"Mercenario",
-      "Daredevil":"Ciego",
+      "Rocket Guardianes de la Galaxia":"Mamifero",
       "Punisher":"Venganza",
       "Black Widow":"Viuda",
       "Doctor Strange":"OjoAgamotto",
@@ -1123,7 +1177,7 @@ function flipCard() {
   if (isImp) {
     front.className = "card-face card-front impostor-card";
     glow.className  = "glow-ring impostor-glow";
-    document.getElementById("card-icon").textContent       = "🕵️";
+    document.getElementById("card-icon").textContent       = "☠️";
     document.getElementById("card-role-label").textContent = "¡ERES EL IMPOSTOR!";
     document.getElementById("card-word").textContent       = "???";
     if (state.hintsEnabled && player.hint) {
@@ -1134,7 +1188,7 @@ function flipCard() {
   } else {
     front.className = "card-face card-front civilian-card";
     glow.className  = "glow-ring civilian-glow";
-    document.getElementById("card-icon").textContent       = "👤";
+    document.getElementById("card-icon").textContent       = "😎";
     document.getElementById("card-role-label").textContent = "¡ERES CIVIL!";
     document.getElementById("card-word").textContent       = player.word;
     document.getElementById("card-hint-label").style.display = "none";
@@ -1184,7 +1238,103 @@ function startGameScreen() {
   document.getElementById("ri-impostors").textContent = activeImps;
   var modeLabel = state.wordMode==="random"?"Aleatorio":state.wordMode==="custom"?"Custom":state.currentCategory.substring(0,9);
   document.getElementById("ri-cat").textContent = modeLabel;
-  startTimer(); showScreen("game");
+  showFirstPicker();
+}
+function showFirstPicker() {
+  var activePlayers = [];
+  for (var i = 0; i < state.players.length; i++)
+    if (state.eliminatedPlayers.indexOf(i) < 0) activePlayers.push(state.players[i].name);
+
+  var civilians = [], impostors = [];
+  for (var j = 0; j < state.players.length; j++) {
+    if (state.eliminatedPlayers.indexOf(j) >= 0) continue;
+    if (state.players[j].role === "impostor") impostors.push(j); else civilians.push(j);
+  }
+  var winnerIdx;
+  if (Math.random() < 0.70&& civilians.length > 0)
+    winnerIdx = civilians[Math.floor(Math.random() * civilians.length)];
+  else if (impostors.length > 0)
+    winnerIdx = impostors[Math.floor(Math.random() * impostors.length)];
+  else
+    winnerIdx = civilians[Math.floor(Math.random() * civilians.length)];
+
+  var reel = document.getElementById("fp-reel");
+  reel.innerHTML = "";
+  reel.style.transform = "translateY(0px)";
+  var ITEM_H = 72;
+  var spinCount = 60;
+  var items = [];
+  for (var k = 0; k < spinCount; k++)
+    items.push(activePlayers[k % activePlayers.length]);
+  items.push(state.players[winnerIdx].name);
+  var totalItems = items.length;
+
+  for (var m = 0; m < totalItems; m++) {
+    var el = document.createElement("div");
+    el.className = "fp-reel-item inactive";
+    el.textContent = items[m];
+    reel.appendChild(el);
+  }
+
+  document.getElementById("fp-result").style.display = "none";
+  document.getElementById("fp-result").style.opacity = "0";
+  var btn = document.getElementById("btn-fp-go");
+  btn.className = "btn-fp-go";
+
+  showScreen("firstpick");
+
+  var startTime = null;
+  var duration = 3800;
+  var targetY = -(totalItems - 1) * ITEM_H;
+
+  function easeOutQuart(t) { return 1 - Math.pow(1 - t, 4); }
+
+  function animStep(ts) {
+    if (!startTime) startTime = ts;
+    var elapsed = ts - startTime;
+    var progress = Math.min(elapsed / duration, 1);
+    var currentY = targetY * easeOutQuart(progress);
+    reel.style.transform = "translateY(" + currentY + "px)";
+
+    var centerIdx = Math.round(-currentY / ITEM_H);
+    centerIdx = Math.max(0, Math.min(centerIdx, totalItems - 1));
+    var els = reel.querySelectorAll(".fp-reel-item");
+    for (var i = 0; i < els.length; i++)
+      els[i].className = "fp-reel-item " + (i === centerIdx ? "active" : "inactive");
+
+    if (progress < 1) {
+      requestAnimationFrame(animStep);
+    } else {
+      reel.style.transform = "translateY(" + targetY + "px)";
+      var finalEls = reel.querySelectorAll(".fp-reel-item");
+      for (var fi = 0; fi < finalEls.length; fi++)
+        finalEls[fi].className = "fp-reel-item " + (fi === totalItems - 1 ? "active" : "inactive");
+      showPickResult(winnerIdx);
+    }
+  }
+  requestAnimationFrame(animStep);
+}
+
+function showPickResult(winnerIdx) {
+  var player = state.players[winnerIdx];
+  var isImp = player.role === "impostor";
+  document.getElementById("fp-result-name").textContent = player.name;
+  var badge = document.getElementById("fp-result-badge");
+  badge.textContent = "🎯 INICIA EL JUEGO";
+  badge.className = "fp-result-role-badge civil";
+  document.getElementById("fp-result-desc").textContent = "Empieza a describir";
+  var res = document.getElementById("fp-result");
+  res.style.display = "block";
+  res.style.transition = "opacity 0.5s";
+  setTimeout(function() { res.style.opacity = "1"; }, 50);
+  setTimeout(function() {
+    document.getElementById("btn-fp-go").className = "btn-fp-go visible";
+  }, 400);
+}
+
+function launchGame() {
+  startTimer();
+  showScreen("game");
 }
 
 var timerTotal = 0;
